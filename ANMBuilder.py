@@ -37,7 +37,7 @@ class Platform( Enum ):
     Windows = 1
     Macintosh = 2
 
-def writeFNTFile( reference_image_path : str, reference_color_palette : str, output_fnt_path : str, kind : Platform ):
+def writeANMFile( reference_image_path : str, reference_color_palette : str, output_fnt_path : str, kind : Platform ):
     source_palette_img = Image.open( reference_color_palette )
     quant_img = source_palette_img.quantize()
 
@@ -62,7 +62,3 @@ def writeFNTFile( reference_image_path : str, reference_color_palette : str, out
 
     new_file = open( output_fnt_path, "wb" )
     new_file.write( data )
-
-writeFNTFile( reference_image_path = "Frames", reference_color_palette = "Frames/0003.png", output_fnt_path = "win.canm", kind = Platform.Windows )
-writeFNTFile( reference_image_path = "Frames", reference_color_palette = "Frames/0003.png", output_fnt_path = "mac.canm", kind = Platform.Macintosh )
-# writeFNTFile( reference_image_path = "Frames", output_fnt_path = "ps1.canm", kind = Platform.Playstation )
