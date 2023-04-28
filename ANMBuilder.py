@@ -50,7 +50,7 @@ class Platform( Enum ):
     Windows = 1
     Macintosh = 2
 
-def writeANMFile( reference_image_path : str, reference_color_palette : str, output_fnt_path : str, kind : Platform ):
+def writeANMFile( reference_image_path : str, reference_color_palette : str, output_fnt_path : str, kind : Platform, frame_count : int = 30 ):
     source_palette_img = Image.open( reference_color_palette )
     quant_img = source_palette_img.quantize( colors = 255 )
 
@@ -65,7 +65,7 @@ def writeANMFile( reference_image_path : str, reference_color_palette : str, out
     else:
         status_endian = '>'
 
-    data = makeHeader( endian = status_endian, number_of_frames = 30, given_palette = palette)
+    data = makeHeader( endian = status_endian, number_of_frames = frame_count, given_palette = palette)
 
     for i in range(1, 31):
         p = reference_image_path + "/{:04d}.png".format( i )
