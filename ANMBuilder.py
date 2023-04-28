@@ -14,12 +14,21 @@ def addColor( endian, b, g, r ):
 def makeHeader( endian, number_of_frames, given_palette ):
     data = bytearray( struct.pack( "{}I".format( endian ), number_of_frames ) )
 
-    for i in range(0, 256):
+    # Purple for unseen.
+    data += addColor( endian, 0.5, 0.0, 0.5 )
+
+    for i in range(0, 255):
         data += addColor( endian, given_palette[i * 3] / 255.0, given_palette[i * 3 + 1] / 255.0, given_palette[i * 3 + 2] / 255.0 )
 
     return data;
 
-def writeSingleFrame( img ):
+def writeSingleFrame( colorful_image, quant_img ):
+    img = colorful_image.convert('RGB').quantize( palette = quant_img )
+    alpha = None
+
+    if colorful_image.mode in ('RGBA', 'LA'):
+        alpha = colorful_image.split()[-1]
+
     pixel_data = bytearray()
     SCAN_LINES_PER_FRAME = 4
     SCAN_LINE_POSITIONS = int(48 / SCAN_LINES_PER_FRAME)
@@ -28,7 +37,11 @@ def writeSingleFrame( img ):
         for next_y in range(0, SCAN_LINES_PER_FRAME):
             for next_x in range(0, 64):
                 position = x, y = next_x, SCAN_LINE_POSITIONS * next_y + s
-                pixel_data.append( img.getpixel( position ) )
+
+                if alpha is not None and alpha.getpixel( position ) == 0:
+                    pixel_data.append( 0 )
+                else:
+                    pixel_data.append( img.getpixel( position ) + 1 )
 
     return pixel_data
 
@@ -39,7 +52,7 @@ class Platform( Enum ):
 
 def writeANMFile( reference_image_path : str, reference_color_palette : str, output_fnt_path : str, kind : Platform ):
     source_palette_img = Image.open( reference_color_palette )
-    quant_img = source_palette_img.quantize()
+    quant_img = source_palette_img.quantize( colors = 255 )
 
     palette = quant_img.getpalette()
 
@@ -57,8 +70,7 @@ def writeANMFile( reference_image_path : str, reference_color_palette : str, out
     for i in range(1, 31):
         p = reference_image_path + "/{:04d}.png".format( i )
         colorful_image = Image.open( p )
-        img = colorful_image.quantize( palette = quant_img )
-        data += writeSingleFrame( img )
+        data += writeSingleFrame( colorful_image, quant_img )
 
     new_file = open( output_fnt_path, "wb" )
     new_file.write( data )
