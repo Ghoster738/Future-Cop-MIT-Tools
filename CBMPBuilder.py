@@ -103,8 +103,12 @@ def makePLUT( endian, palette, is_playstation : bool ):
 
     data += addColor( endian, 0, 0, 0, 0 )
 
-    for i in range(0, 0xFF):
-        data += addColor( endian, palette[i * 3] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 0 )
+    if is_playstation == False:
+        for i in range(0, 0xFF):
+            data += addColor( endian, palette[i * 3] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 0 )
+    else:
+        for i in range(0, 0xFF):
+            data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3] / 255.0, 0 )
 
     return data
 
