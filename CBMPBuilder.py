@@ -226,7 +226,26 @@ def makeLkUp( endian, amounts : () ):
 
     return data
 
-def makePLUT( endian, amounts: (), palettes : (), is_playstation : bool ):
+def makePSPLUT( endian, palette ):
+    PLUT_TAG = 0x504C5554
+    size = 0x214
+
+    data = bytearray( struct.pack( "{}IIIII".format( endian ), PLUT_TAG, size, 0, 0x100, 0 ) )
+
+    data += addColor( endian, 0, 0, 0, 0 )
+
+    palette_amount = 0
+
+    for i in range(0, int(len(palette) / 3)):
+        data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 0] / 255.0, 0 )
+        palette_amount += 1
+
+    for i in range(palette_amount, 0xFF):
+        data += addColor( endian, 1.0, 0.0, 1.0, 0 )
+
+    return data
+
+def makePLUT( endian, amounts: (), palettes : () ):
     PLUT_TAG = 0x504C5554
     size = 0x214
 
@@ -239,19 +258,13 @@ def makePLUT( endian, amounts: (), palettes : (), is_playstation : bool ):
     palette = palettes[0]
 
     for i in range(0, int(len(palette) / 3)):
-        if is_playstation == False:
-            data += addColor( endian, palette[i * 3 + 0] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 1 )
-        else:
-            data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 0] / 255.0, 1 )
+        data += addColor( endian, palette[i * 3 + 0] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 1 )
         palette_amount += 1
 
     palette = palettes[1]
 
     for i in range(0, int(len(palette) / 3)):
-        if is_playstation == False:
-            data += addColor( endian, palette[i * 3] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 0 )
-        else:
-            data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3] / 255.0, 0 )
+        data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3] / 255.0, 0 )
         palette_amount += 1
 
     for i in range(palette_amount, 0xFF):
@@ -278,19 +291,19 @@ def writeCBMPFile( source_img : Image, output_fnt_path : str, kind : Platform ):
 
     data = makeHeader( endian = status_endian, is_playstation = is_ps1 )
 
-    amounts  = getColorAmounts( source_img )
-    palettes = createColorPalette( source_img, amounts )
-
     if is_ps1:
         quant_img = source_img.quantize( colors = 255 )
         qpalette = quant_img.getpalette()
 
         data += writePIX( endian = status_endian, image = source_img, quantize_image = quant_img )
-        data += makePLUT( endian = status_endian, palette = qpalette, is_playstation = True )
+        data += makePSPLUT( endian = status_endian, palette = qpalette )
     else:
+        amounts  = getColorAmounts( source_img )
+        palettes = createColorPalette( source_img, amounts )
+
         data += makeLkUp( status_endian, amounts )
         data += writePIX( endian = status_endian, image = source_img )
-        data += makePLUT( status_endian, amounts, palettes, is_playstation = False )
+        data += makePLUT( status_endian, amounts, palettes )
 
 
     new_file = open( output_fnt_path, "wb" )
