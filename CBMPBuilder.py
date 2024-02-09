@@ -234,21 +234,28 @@ def makePLUT( endian, amounts: (), palettes : (), is_playstation : bool ):
 
     data += addColor( endian, 0, 0, 0, 0 )
 
+    palette_amount = 0
+
     palette = palettes[0]
 
-    for i in range(0, amounts[0]):
+    for i in range(0, int(len(palette) / 3)):
         if is_playstation == False:
-            data += addColor( endian, palette[(i * 3 + 0) % len(palette)] / 255.0, palette[(i * 3 + 1) % len(palette)] / 255.0, palette[(i * 3 + 2) % len(palette)] / 255.0, 1 )
+            data += addColor( endian, palette[i * 3 + 0] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 1 )
         else:
-            data += addColor( endian, palette[(i * 3 + 2) % len(palette)] / 255.0, palette[(i * 3 + 1) % len(palette)] / 255.0, palette[(i * 3 + 0) % len(palette)] / 255.0, 1 )
+            data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 0] / 255.0, 1 )
+        palette_amount += 1
 
     palette = palettes[1]
 
-    for i in range(0, amounts[1]):
+    for i in range(0, int(len(palette) / 3)):
         if is_playstation == False:
-            data += addColor( endian, palette[(i * 3 + 0) % len(palette)] / 255.0, palette[(i * 3 + 1) % len(palette)] / 255.0, palette[(i * 3 + 2) % len(palette)] / 255.0, 0 )
+            data += addColor( endian, palette[i * 3] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 0 )
         else:
-            data += addColor( endian, palette[(i * 3 + 2) % len(palette)] / 255.0, palette[(i * 3 + 1) % len(palette)] / 255.0, palette[(i * 3 + 0) % len(palette)] / 255.0, 0 )
+            data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3] / 255.0, 0 )
+        palette_amount += 1
+
+    for i in range(palette_amount, 0xFF):
+        data += addColor( endian, 1.0, 0.0, 1.0, 0 )
 
     return data
 
