@@ -230,11 +230,6 @@ def makePLUT( endian, amounts: (), palettes : (), is_playstation : bool ):
     PLUT_TAG = 0x504C5554
     size = 0x214
 
-    semi_transparent_size = amounts[0]
-
-    if semi_transparent_size <= 0:
-        semi_transparent_size = 0
-
     data = bytearray( struct.pack( "{}IIIII".format( endian ), PLUT_TAG, size, 0, 0x100, 0 ) )
 
     data += addColor( endian, 0, 0, 0, 0 )
@@ -243,17 +238,17 @@ def makePLUT( endian, amounts: (), palettes : (), is_playstation : bool ):
 
     for i in range(0, amounts[0]):
         if is_playstation == False:
-            data += addColor( endian, palette[i * 3] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 1 )
+            data += addColor( endian, palette[(i * 3 + 0) % len(palette)] / 255.0, palette[(i * 3 + 1) % len(palette)] / 255.0, palette[(i * 3 + 2) % len(palette)] / 255.0, 1 )
         else:
-            data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3] / 255.0, 1 )
+            data += addColor( endian, palette[(i * 3 + 2) % len(palette)] / 255.0, palette[(i * 3 + 1) % len(palette)] / 255.0, palette[(i * 3 + 0) % len(palette)] / 255.0, 1 )
 
     palette = palettes[1]
 
     for i in range(0, amounts[1]):
         if is_playstation == False:
-            data += addColor( endian, palette[i * 3] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 0 )
+            data += addColor( endian, palette[(i * 3 + 0) % len(palette)] / 255.0, palette[(i * 3 + 1) % len(palette)] / 255.0, palette[(i * 3 + 2) % len(palette)] / 255.0, 0 )
         else:
-            data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3] / 255.0, 0 )
+            data += addColor( endian, palette[(i * 3 + 2) % len(palette)] / 255.0, palette[(i * 3 + 1) % len(palette)] / 255.0, palette[(i * 3 + 0) % len(palette)] / 255.0, 0 )
 
     return data
 
