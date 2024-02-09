@@ -104,7 +104,7 @@ def createColorPalette( image, palette_size : () ):
 
     # Second pass opaque data.
     location = 0
-    sub_image = Image.new( "RGB", (1, semi_width) )
+    sub_image = Image.new( "RGB", (1, opaque_width) )
 
     for next_y in range(0, 256):
         for next_x in range(0, 256):
