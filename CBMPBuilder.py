@@ -14,6 +14,118 @@ def addColor( endian, b, g, r, t ):
 
     return bytearray( struct.pack( "{}H".format( endian ), bitfield ) )
 
+def getColorAmounts( image ):
+    alpha = None
+
+    if image.mode in ('RGBA', 'LA'):
+        alpha = image.split()[-1]
+
+    if alpha is None:
+        return (0, 255)
+
+    clear_count : int = 0
+    opaque_count : int = 0
+    semi_transparent_count : int = 0
+
+    for next_y in range(0, 256):
+        for next_x in range(0, 256):
+            position = x, y = next_x, next_y
+
+            alpha_value = alpha.getpixel( position )
+
+            if alpha_value == 0:
+                clear_count += 1
+            elif alpha_value == 255:
+                opaque_count += 1
+            else:
+                semi_transparent_count += 1
+
+    visable_count = semi_transparent_count + opaque_count
+
+    opaque_ratio = opaque_count / visable_count
+    semi_transparent_ratio = semi_transparent_count / visable_count
+
+    opaque_aprox = opaque_ratio * 255.
+    semi_transparent_aprox = semi_transparent_ratio * 255.
+
+    opaque_amount = int(opaque_aprox)
+    semi_transparent_amount = int(semi_transparent_aprox)
+
+    if opaque_amount + semi_transparent_amount < 255:
+        if opaque_amount > semi_transparent_amount:
+            semi_transparent_amount += 255 - (opaque_amount + semi_transparent_amount)
+        else:
+            opaque_amount += 255 - (opaque_amount + semi_transparent_amount)
+    elif opaque_amount + semi_transparent_amount > 255:
+        print("ERROR {} and {} is actually bigger somehow!".format( opaque_amount, semi_transparent_amount ))
+        exit()
+
+    return (semi_transparent_amount, opaque_amount)
+
+def createColorPalette( image, palette_size : () ):
+    alpha = None
+
+    if image.mode in ('RGBA', 'LA'):
+        alpha = image.split()[-1]
+
+    # Ignore completly clear pixels for both passes.
+
+    # Gather two sizes
+    opaque_width = 0
+    semi_width = 0
+
+    for next_y in range(0, 256):
+        for next_x in range(0, 256):
+            position = x, y = next_x, next_y
+
+            alpha_value = alpha.getpixel( position )
+
+            if alpha_value == 255:
+                opaque_width += 1
+            elif alpha_value != 0:
+                semi_width += 1
+
+    # First pass semi-transparent data.
+    location = 0
+    sub_image = Image.new( "RGB", (1, semi_width) )
+
+    for next_y in range(0, 256):
+        for next_x in range(0, 256):
+            position = x, y = next_x, next_y
+
+            alpha_value = alpha.getpixel( position )
+
+            if alpha_value != 255 and alpha_value != 0:
+                sub_image.putpixel( (0, location), image.getpixel( position ) )
+
+                location += 1
+
+    semi_palette = sub_image.quantize( palette_size[0] ).getpalette()
+
+    # Second pass opaque data.
+    location = 0
+    sub_image = Image.new( "RGB", (1, semi_width) )
+
+    for next_y in range(0, 256):
+        for next_x in range(0, 256):
+            position = x, y = next_x, next_y
+
+            alpha_value = alpha.getpixel( position )
+
+            if alpha_value == 255:
+                pixel = image.getpixel( position )
+
+                if pixel[0] == 0 and pixel[1] == 0 and pixel[2] == 0:
+                    sub_image.putpixel( (0, location), (pixel[0], pixel[1], pixel[2] + 1) )
+                else:
+                    sub_image.putpixel( (0, location), pixel )
+
+                location += 1
+
+    opaque_palette = sub_image.quantize( palette_size[1] ).getpalette()
+
+    return (semi_palette, opaque_palette)
+
 def makeHeader( endian, is_playstation : bool ):
     CCB_TAG = 0x43434220
     size = 0x4C
@@ -29,13 +141,18 @@ def makeHeader( endian, is_playstation : bool ):
 
     return data
 
-def writePIX( endian, image, quantize_image, is_playstation : bool ):
+def writePIX( endian, image, quantize_image = None ):
     alpha = None
 
     if image.mode in ('RGBA', 'LA'):
         alpha = image.split()[-1]
 
     data = bytearray()
+
+    is_playstation = False
+
+    if quantize_image is not None:
+        is_playstation = True
 
     if is_playstation == True:
         PDAT_TAG = 0x50444154
@@ -66,7 +183,7 @@ def writePIX( endian, image, quantize_image, is_playstation : bool ):
             for next_x in range(0, 256):
                 position = x, y = next_x, next_y
 
-                pixel = image.getpixel( position );
+                pixel = image.getpixel( position )
 
                 if alpha is not None:
                     if alpha.getpixel( position ) == 0:
@@ -84,30 +201,58 @@ def writePIX( endian, image, quantize_image, is_playstation : bool ):
 
     return data
 
-def makeLkUp( endian, palette, is_playstation : bool ):
+def makeLkUp( endian, amounts : () ):
     LKUP_TAG = 0x4C6B5570
     size = 0x408
 
     data = bytearray( struct.pack( "{}II".format( endian ), LKUP_TAG, size ) )
 
-    for i in range(0, 0x400):
-        data += bytearray( struct.pack( "{}B".format( endian ), 1 ) )
+    semi_transparent_size = amounts[0]
+
+    if semi_transparent_size <= 0:
+        semi_transparent_size = 1
+
+    for i in range(0, 0x100):
+        data += bytearray( struct.pack( "{}B".format( endian ), semi_transparent_size ) )
+
+    for i in range(0, 0x100):
+        data += bytearray( struct.pack( "{}B".format( endian ), 0xFF ) )
+
+    for i in range(0, 0x100):
+        data += bytearray( struct.pack( "{}B".format( endian ), 0 ) )
+
+    for i in range(0, 0x100):
+        data += bytearray( struct.pack( "{}B".format( endian ), semi_transparent_size - 1 ) )
 
     return data
 
-def makePLUT( endian, palette, is_playstation : bool ):
+def makePLUT( endian, amounts: (), palettes : (), is_playstation : bool ):
     PLUT_TAG = 0x504C5554
     size = 0x214
+
+    semi_transparent_size = amounts[0]
+
+    if semi_transparent_size <= 0:
+        semi_transparent_size = 0
 
     data = bytearray( struct.pack( "{}IIIII".format( endian ), PLUT_TAG, size, 0, 0x100, 0 ) )
 
     data += addColor( endian, 0, 0, 0, 0 )
 
-    if is_playstation == False:
-        for i in range(0, 0xFF):
+    palette = palettes[0]
+
+    for i in range(0, amounts[0]):
+        if is_playstation == False:
+            data += addColor( endian, palette[i * 3] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 1 )
+        else:
+            data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3] / 255.0, 1 )
+
+    palette = palettes[1]
+
+    for i in range(0, amounts[1]):
+        if is_playstation == False:
             data += addColor( endian, palette[i * 3] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 0 )
-    else:
-        for i in range(0, 0xFF):
+        else:
             data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3] / 255.0, 0 )
 
     return data
@@ -118,10 +263,6 @@ class Platform( Enum ):
     Macintosh = 2
 
 def writeCBMPFile( source_img : Image, output_fnt_path : str, kind : Platform ):
-    quant_img = source_img.quantize( colors = 255 )
-
-    qpalette = quant_img.getpalette()
-
     status_endian = '@'
     is_ps1 = False
 
@@ -135,13 +276,20 @@ def writeCBMPFile( source_img : Image, output_fnt_path : str, kind : Platform ):
 
     data = makeHeader( endian = status_endian, is_playstation = is_ps1 )
 
-    if is_ps1:
-        data += writePIX( endian = status_endian, image = source_img, quantize_image = quant_img, is_playstation = is_ps1 )
-    else:
-        data += makeLkUp( endian = status_endian, palette = qpalette, is_playstation = is_ps1 )
-        data += writePIX( endian = status_endian, image = source_img, quantize_image = quant_img, is_playstation = is_ps1 )
+    amounts  = getColorAmounts( source_img )
+    palettes = createColorPalette( source_img, amounts )
 
-    data += makePLUT( endian = status_endian, palette = qpalette, is_playstation = is_ps1 )
+    if is_ps1:
+        quant_img = source_img.quantize( colors = 255 )
+        qpalette = quant_img.getpalette()
+
+        data += writePIX( endian = status_endian, image = source_img, quantize_image = quant_img )
+        data += makePLUT( endian = status_endian, palette = qpalette, is_playstation = True )
+    else:
+        data += makeLkUp( status_endian, amounts )
+        data += writePIX( endian = status_endian, image = source_img )
+        data += makePLUT( status_endian, amounts, palettes, is_playstation = False )
+
 
     new_file = open( output_fnt_path, "wb" )
     new_file.write( data )
