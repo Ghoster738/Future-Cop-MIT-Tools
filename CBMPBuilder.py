@@ -209,11 +209,11 @@ def makeLkUp( endian, amounts : () ):
 
     semi_transparent_size = amounts[0]
 
-    if semi_transparent_size <= 0:
-        semi_transparent_size = 1
+    if semi_transparent_size >= 255:
+        semi_transparent_size = 254
 
     for i in range(0, 0x100):
-        data += bytearray( struct.pack( "{}B".format( endian ), semi_transparent_size ) )
+        data += bytearray( struct.pack( "{}B".format( endian ), semi_transparent_size + 1 ) )
 
     for i in range(0, 0x100):
         data += bytearray( struct.pack( "{}B".format( endian ), 0xFF ) )
@@ -222,7 +222,7 @@ def makeLkUp( endian, amounts : () ):
         data += bytearray( struct.pack( "{}B".format( endian ), 0 ) )
 
     for i in range(0, 0x100):
-        data += bytearray( struct.pack( "{}B".format( endian ), semi_transparent_size - 1 ) )
+        data += bytearray( struct.pack( "{}B".format( endian ), semi_transparent_size ) )
 
     return data
 
