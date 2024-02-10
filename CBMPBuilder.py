@@ -264,7 +264,7 @@ def makePLUT( endian, amounts: (), palettes : () ):
     palette = palettes[1]
 
     for i in range(0, int(len(palette) / 3)):
-        data += addColor( endian, palette[i * 3 + 2] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3] / 255.0, 0 )
+        data += addColor( endian, palette[i * 3 + 0] / 255.0, palette[i * 3 + 1] / 255.0, palette[i * 3 + 2] / 255.0, 0 )
         palette_amount += 1
 
     for i in range(palette_amount, 0xFF):
@@ -313,5 +313,5 @@ def writeCBMPFilePath( reference_image_path : str, output_fnt_path : str, kind :
     image_read = Image.open( reference_image_path )
     writeCBMPFile( image_read, output_fnt_path, kind )
 
-# writeCBMPFilePath( "example.png", "windows.cbmp", Platform.Windows )
+writeCBMPFilePath( "precinct_map.png", "precinct_map.cbmp", Platform.Windows )
 # writeCBMPFilePath( "example.png", "macintosh.cbmp", Platform.Macintosh )
