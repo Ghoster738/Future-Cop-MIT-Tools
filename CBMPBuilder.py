@@ -161,13 +161,16 @@ def writePIX( endian, image, quantize_image = None ):
                     if alpha.getpixel( position ) == 0:
                         data += addColor( endian, 0, 0, 0, 0 )
                     elif alpha.getpixel( position ) == 255:
-                        data += addColor( endian, pixel[0] / 255.0, pixel[1] / 255.0, pixel[2] / 255.0, 0 )
+                        if pixel[0] == 0 and pixel[1] == 0 and pixel[2] == 0:
+                            data += addColor( endian, 33.0 / 255.0, 0, 0, 0 )
+                        else:
+                            data += addColor( endian, pixel[0] / 255.0, pixel[1] / 255.0, pixel[2] / 255.0, 0 )
                     else:
                         data += addColor( endian, pixel[0] / 255.0, pixel[1] / 255.0, pixel[2] / 255.0, 1 )
 
                 else:
                     if pixel[0] == 0 and pixel[1] == 0 and pixel[2] == 0:
-                        data += addColor( endian, 1.0 / 255.0, 0, 0, 0 )
+                        data += addColor( endian, 33.0 / 255.0, 0, 0, 0 )
                     else:
                         data += addColor( endian, pixel[0] / 255.0, pixel[1] / 255.0, pixel[2] / 255.0, 0 )
 
