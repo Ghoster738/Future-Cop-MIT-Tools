@@ -14,18 +14,17 @@ def addColor( endian, b : float, g : float, r : float, t : int ):
 
     return bytearray( struct.pack( "{}H".format( endian ), bitfield ) )
 
-def getColorAmounts( image ):
+def createColorPalette( image ):
     alpha = None
 
     if image.mode in ('RGBA', 'LA'):
         alpha = image.split()[-1]
 
-    if alpha is None:
-        return (0, 255)
+    # Ignore completly clear pixels for both passes.
 
-    clear_count : int = 0
-    opaque_count : int = 0
-    semi_transparent_count : int = 0
+    # Gather there counts.
+    opaque_width = 0
+    semi_width = 0
 
     for next_y in range(0, 256):
         for next_x in range(0, 256):
@@ -33,17 +32,15 @@ def getColorAmounts( image ):
 
             alpha_value = alpha.getpixel( position )
 
-            if alpha_value == 0:
-                clear_count += 1
-            elif alpha_value == 255:
-                opaque_count += 1
-            else:
-                semi_transparent_count += 1
+            if alpha_value == 255:
+                opaque_width += 1
+            elif alpha_value != 0:
+                semi_width += 1
 
-    visable_count = semi_transparent_count + opaque_count
+    visable_count = semi_width + opaque_width
 
-    opaque_ratio = opaque_count / visable_count
-    semi_transparent_ratio = semi_transparent_count / visable_count
+    opaque_ratio = opaque_width / visable_count
+    semi_transparent_ratio = semi_width / visable_count
 
     opaque_aprox = opaque_ratio * 255.
     semi_transparent_aprox = semi_transparent_ratio * 255.
@@ -60,31 +57,6 @@ def getColorAmounts( image ):
         print("ERROR {} and {} is actually bigger somehow!".format( opaque_amount, semi_transparent_amount ))
         exit()
 
-    return (semi_transparent_amount, opaque_amount)
-
-def createColorPalette( image, palette_size : () ):
-    alpha = None
-
-    if image.mode in ('RGBA', 'LA'):
-        alpha = image.split()[-1]
-
-    # Ignore completly clear pixels for both passes.
-
-    # Gather two sizes
-    opaque_width = 0
-    semi_width = 0
-
-    for next_y in range(0, 256):
-        for next_x in range(0, 256):
-            position = x, y = next_x, next_y
-
-            alpha_value = alpha.getpixel( position )
-
-            if alpha_value == 255:
-                opaque_width += 1
-            elif alpha_value != 0:
-                semi_width += 1
-
     # First pass semi-transparent data.
     location = 0
     sub_image = Image.new( "RGB", (1, semi_width) )
@@ -100,7 +72,7 @@ def createColorPalette( image, palette_size : () ):
 
                 location += 1
 
-    semi_palette = sub_image.quantize( palette_size[0] ).getpalette()
+    semi_palette = sub_image.quantize( semi_transparent_amount ).getpalette()
 
     # Second pass opaque data.
     location = 0
@@ -122,7 +94,7 @@ def createColorPalette( image, palette_size : () ):
 
                 location += 1
 
-    opaque_palette = sub_image.quantize( palette_size[1] ).getpalette()
+    opaque_palette = sub_image.quantize( opaque_amount ).getpalette()
 
     return (semi_palette, opaque_palette)
 
@@ -298,8 +270,7 @@ def writeCBMPFile( source_img : Image, output_fnt_path : str, kind : Platform ):
         data += writePIX( endian = status_endian, image = source_img, quantize_image = quant_img )
         data += makePSPLUT( endian = status_endian, palette = qpalette )
     else:
-        amounts  = getColorAmounts( source_img )
-        palettes = createColorPalette( source_img, amounts )
+        palettes = createColorPalette( source_img )
 
         data += makeLkUp( status_endian, palettes )
         data += writePIX( endian = status_endian, image = source_img )
