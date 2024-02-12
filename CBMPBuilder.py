@@ -2,7 +2,7 @@ from PIL import Image # 9.4.0-2
 import struct
 from enum import Enum
 
-def addColor( endian, b, g, r, t ):
+def addColor( endian, b : float, g : float, r : float, t : int ):
     r_bit = min( int( r * 32.0 ), 31 )
     g_bit = min( int( g * 32.0 ), 31 )
     b_bit = min( int( b * 32.0 ), 31 )
@@ -201,13 +201,13 @@ def writePIX( endian, image, quantize_image = None ):
 
     return data
 
-def makeLkUp( endian, amounts : () ):
+def makeLkUp( endian, palettes : () ):
     LKUP_TAG = 0x4C6B5570
     size = 0x408
 
     data = bytearray( struct.pack( "{}II".format( endian ), LKUP_TAG, size ) )
 
-    semi_transparent_size = amounts[0]
+    semi_transparent_size = int( len(palettes[0]) / 3 )
 
     if semi_transparent_size >= 255:
         semi_transparent_size = 254
@@ -245,7 +245,7 @@ def makePSPLUT( endian, palette ):
 
     return data
 
-def makePLUT( endian, amounts: (), palettes : () ):
+def makePLUT( endian, palettes : () ):
     PLUT_TAG = 0x504C5554
     size = 0x214
 
@@ -301,9 +301,9 @@ def writeCBMPFile( source_img : Image, output_fnt_path : str, kind : Platform ):
         amounts  = getColorAmounts( source_img )
         palettes = createColorPalette( source_img, amounts )
 
-        data += makeLkUp( status_endian, amounts )
+        data += makeLkUp( status_endian, palettes )
         data += writePIX( endian = status_endian, image = source_img )
-        data += makePLUT( status_endian, amounts, palettes )
+        data += makePLUT( status_endian, palettes )
 
 
     new_file = open( output_fnt_path, "wb" )
