@@ -14,6 +14,13 @@ def addColor( endian, b : float, g : float, r : float, t : int ):
 
     return bytearray( struct.pack( "{}H".format( endian ), bitfield ) )
 
+def quantizeColor( source_pixel : () ):
+    channel_0 = int((source_pixel[0] / 255.0) * 32.0) * 8
+    channel_1 = int((source_pixel[1] / 255.0) * 32.0) * 8
+    channel_2 = int((source_pixel[2] / 255.0) * 32.0) * 8
+
+    return (channel_0, channel_1, channel_2)
+
 def createColorPalette( image ):
     alpha = None
 
@@ -68,7 +75,7 @@ def createColorPalette( image ):
             alpha_value = alpha.getpixel( position )
 
             if alpha_value != 255 and alpha_value != 0:
-                sub_image.putpixel( (0, location), image.getpixel( position ) )
+                sub_image.putpixel( (0, location), quantizeColor( image.getpixel( position ) ) )
 
                 location += 1
 
@@ -85,10 +92,10 @@ def createColorPalette( image ):
             alpha_value = alpha.getpixel( position )
 
             if alpha_value == 255:
-                pixel = image.getpixel( position )
+                pixel = quantizeColor( image.getpixel( position ) )
 
                 if pixel[0] == 0 and pixel[1] == 0 and pixel[2] == 0:
-                    sub_image.putpixel( (0, location), (pixel[0], pixel[1], pixel[2] + 1) )
+                    sub_image.putpixel( (0, location), (pixel[0], pixel[1], pixel[2] + 32) )
                 else:
                     sub_image.putpixel( (0, location), pixel )
 
