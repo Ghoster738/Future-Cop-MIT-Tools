@@ -168,7 +168,7 @@ def writePIX( endian, image, quantize_image = None ):
                     if alpha.getpixel( position ) == 0:
                         data += addColor( endian, 0, 0, 0, 0 )
                     elif alpha.getpixel( position ) == 255:
-                        if pixel[0] == 0 and pixel[1] == 0 and pixel[2] == 0:
+                        if pixel[0] < 32 and pixel[1] < 32 and pixel[2] < 32:
                             data += addColor( endian, 33.0 / 255.0, 0, 0, 0 )
                         else:
                             data += addColor( endian, pixel[0] / 255.0, pixel[1] / 255.0, pixel[2] / 255.0, 0 )
@@ -293,6 +293,3 @@ def writeCBMPFile( source_img : Image, output_fnt_path : str, kind : Platform ):
 def writeCBMPFilePath( reference_image_path : str, output_fnt_path : str, kind : Platform ):
     image_read = Image.open( reference_image_path )
     writeCBMPFile( image_read, output_fnt_path, kind )
-
-writeCBMPFilePath( "precinct_map.png", "precinct_map.cbmp", Platform.Windows )
-# writeCBMPFilePath( "example.png", "macintosh.cbmp", Platform.Macintosh )
