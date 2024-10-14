@@ -5,8 +5,7 @@ def COBJChunk(chunk_id : str, endian : str, byte_data : bytearray):
     chunk_ascii = list(chunk_id.encode('ascii'))
 
     if len(chunk_id) != 4:
-        print("chunk_id is not four but", len(chunk_id))
-        exit()
+        raise Exception("chunk_id '{}' is not four but {}".format(chunk_id, len(chunk_id)))
 
     chunk_number = (chunk_ascii[0] << 24) | (chunk_ascii[1] << 16) | (chunk_ascii[2] << 8) | (chunk_ascii[3])
 
@@ -17,15 +16,65 @@ def COBJChunk(chunk_id : str, endian : str, byte_data : bytearray):
 
 class COBJFaceType:
     def __init__(self):
-        self.opcodes = [1,0,0,0]
-        self.coords = []
+        self.opcodes = [0,0,0,0]
+        self.texCoords = [[0, 0], [0, 0], [0, 0], [0, 0]]
         self.bmp_id = 0
+
+    def hasVertexColor(self):
+        if (self.opcodes[0] & 1) != 0:
+            return True
+        return False
+
+    def setVertexColor(self, isThereColor : bool, colors : list = [0, 0, 0]):
+        if isThereColor:
+            self.opcodes[0] |= 1
+        else:
+            self.opcodes[0] &= 0b11111110
+
+        if len(colors) != 4:
+            raise Exception("colors is not four but {}".format(len(colors)))
+
+        self.opcodes[1] = colors[0]
+        self.opcodes[2] = colors[1]
+        self.opcodes[3] = colors[2]
+
+    def hasTexCoords(self):
+        if (self.opcodes[0] & 2) != 0:
+            return True
+        return False
+
+    def setTexCoords(self, isThereTexture : bool, texCoords : list = [[0, 0], [0, 0], [0, 0], [0, 0]]):
+        if isThereTexture:
+            self.opcodes[0] |= 2
+        else:
+            self.opcodes[0] &= 0b11111101
+
+        if len(texCoords) != 4:
+            raise Exception("texCoords is not four but {}".format(len(texCoords)))
+
+        for i in range(0, 4):
+            if len(texCoords[i]) < 2:
+                raise Exception("texCoords[{}] is not two but {}".format(i, len(texCoords[i])))
+
+        for x in range(0, 4):
+            for y in range(0, 2):
+                self.texCoords[x][y] = texCoords[x][y]
+
+    def setBMPID(self, bmp_id : int):
+        self.bmp_id = bmp_id
+
+    def getBMPID(self):
+        return self.bmp_id
     
     def make(self, endian):
         data = bytearray( struct.pack( "{}BBBB".format( endian ), self.opcodes[0], self.opcodes[1], self.opcodes[2], self.opcodes[3]) )
         
-        if self.opcode != 1:
-            data += bytearray( struct.pack( "{}BBBBBBBBI".format( endian ), self.coords[0][0], self.coords[0][1], self.coords[1][0], self.coords[1][1], self.coords[2][0], self.coords[2][1], self.coords[3][0], self.coords[3][1], self.bmp_id) )
+        if self.hasTexCoords():
+            data += bytearray( struct.pack( "{}BBBBBBBBI".format( endian ),
+                                    self.texCoords[0][0], self.texCoords[0][1],
+                                    self.texCoords[1][0], self.texCoords[1][1],
+                                    self.texCoords[2][0], self.texCoords[2][1],
+                                    self.texCoords[3][0], self.texCoords[3][1], self.bmp_id) )
         
         return data
 
