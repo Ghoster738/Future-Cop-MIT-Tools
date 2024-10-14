@@ -12,6 +12,9 @@ def COBJChunk(chunk_id : str, endian : str, byte_data : bytearray):
     data = bytearray( struct.pack( "{}II".format( endian ), chunk_number, len(byte_data) + 8) )
     data += byte_data
 
+    if len(data) % 4 != 0:
+        print("chunk '{}' is not a multiple of 4 but {}".format(chunk_id, len(data)))
+
     return data
 
 class COBJFaceType:
@@ -31,8 +34,8 @@ class COBJFaceType:
         else:
             self.opcodes[0] &= 0b11111110
 
-        if len(colors) != 4:
-            raise Exception("colors is not four but {}".format(len(colors)))
+        if len(colors) != 3:
+            raise Exception("colors is not three but {}".format(len(colors)))
 
         self.opcodes[1] = colors[0]
         self.opcodes[2] = colors[1]
@@ -77,6 +80,14 @@ class COBJFaceType:
                                     self.texCoords[3][0], self.texCoords[3][1], self.bmp_id) )
         
         return data
+
+    def makeChunk(face_types : list, endian : str):
+        data = bytearray( struct.pack( "{}I".format( endian ), 1) )
+
+        for i in face_types:
+            data += i.make(endian)
+
+        return COBJChunk("3DTL", endian, data)
 
 class PolygonType(Enum):
     STAR      = 0
@@ -135,6 +146,9 @@ class COBJModel:
         self.child_vertex_indexes = [0xFF, 0xFF, 0xFF, 0xFF] # Indexes to self.vertices
         self.face_types = []
 
+    def getFaceTypes(self):
+        return self.face_types
+
     def makeHeader(self, endian, is_mac):
         data = bytearray( struct.pack( "{}I".format( endian ), 1) )
 
@@ -174,7 +188,8 @@ class COBJModel:
         return COBJChunk("4DGI", endian, data)
 
     def makeResource(self, endian, is_mac):
-        data = self.makeHeader(endian, is_mac)
+        data  = self.makeHeader(endian, is_mac)
+        data += COBJFaceType.makeChunk(self.face_types, endian)
 
         return data
 
@@ -186,4 +201,13 @@ class COBJModel:
 
         
 model = COBJModel()
+
+faceTypes = model.getFaceTypes()
+
+testFaceType = COBJFaceType()
+
+testFaceType.setVertexColor(True, [0xFF, 0, 0x7F])
+
+faceTypes.append(testFaceType)
+
 model.makeFile("test.cobj", '<', False)
