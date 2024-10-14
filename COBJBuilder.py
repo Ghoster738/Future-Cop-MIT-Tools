@@ -89,25 +89,25 @@ class COBJFaceType:
 
         return COBJChunk("3DTL", endian, data)
 
-class COBJFacePolygonType(Enum):
+class COBJPrimitivePolygonType(Enum):
     STAR      = 0
     TRIANGLE  = 3
     QUAD      = 4
     BILLBOARD = 5
     LINE      = 7
 
-class COBJFace:
+class COBJPrimitive:
     def __init__(self):
         self.texture = False
         self.bitfield = 0b1101
         self.reflective = False
-        self.face_type = None
-        self.poly_type = COBJFacePolygonType.STAR
+        self.face_type_index = 0
+        self.poly_type = COBJPrimitivePolygonType.STAR
         self.vertex_index = [0, 0, 0, 0]
         self.normal_index = [0, 0, 0, 0]
 
     def setTypeStar(self, position_index : int, length_index : int, colors : list):
-        self.poly_type = COBJFacePolygonType.STAR
+        self.poly_type = COBJPrimitivePolygonType.STAR
 
         if len(colors) < 3:
             raise Exception("colors is not three but {}".format(len(colors)))
@@ -123,12 +123,12 @@ class COBJFace:
         self.normal_index[3] = 0
 
     def setTypeTriangle(self, position_indexes : list, normal_indexes : list = [0, 0, 0]):
-        self.poly_type = COBJFacePolygonType.TRIANGLE
+        self.poly_type = COBJPrimitivePolygonType.TRIANGLE
 
         if len(position_indexes) < 3:
             raise Exception("position_indexes is not three but {}".format(len(position_indexes)))
 
-        if len(normal_index) < 3:
+        if len(normal_indexes) < 3:
             raise Exception("position_indexes is not three but {}".format(len(position_indexes)))
 
         self.vertex_index[0] = position_indexes[0]
@@ -136,18 +136,18 @@ class COBJFace:
         self.vertex_index[2] = position_indexes[2]
         self.vertex_index[3] = 0
 
-        self.normal_index[0] = normal_index[0]
-        self.normal_index[1] = normal_index[1]
-        self.normal_index[2] = normal_index[2]
+        self.normal_index[0] = normal_indexes[0]
+        self.normal_index[1] = normal_indexes[1]
+        self.normal_index[2] = normal_indexes[2]
         self.normal_index[3] = 0
 
-    def setTypeQuad(self, position_indexes : list, normal_index : list = [0, 0, 0, 0]):
-        self.poly_type = COBJFacePolygonType.QUAD
+    def setTypeQuad(self, position_indexes : list, normal_indexes : list = [0, 0, 0, 0]):
+        self.poly_type = COBJPrimitivePolygonType.QUAD
 
         if len(position_indexes) < 4:
             raise Exception("position_indexes is not four but {}".format(len(position_indexes)))
 
-        if len(normal_index) < 4:
+        if len(normal_indexes) < 4:
             raise Exception("position_indexes is not four but {}".format(len(position_indexes)))
 
         self.vertex_index[0] = position_indexes[0]
@@ -161,7 +161,7 @@ class COBJFace:
         self.normal_index[3] = normal_indexes[3]
         
     def setTypeBillboard(self, position_index : int, length_index : int):
-        self.poly_type = COBJFacePolygonType.BILLBOARD
+        self.poly_type = COBJPrimitivePolygonType.BILLBOARD
 
         self.vertex_index[0] = position_index
         self.vertex_index[1] = 0xFF
@@ -174,7 +174,7 @@ class COBJFace:
         self.normal_index[3] = 0
 
     def setTypeLine(self, position_index_0 : int, length_index_0 : int, position_index_1 : int, length_index_1 : int):
-        self.poly_type = COBJFacePolygonType.LINE
+        self.poly_type = COBJPrimitivePolygonType.LINE
 
         self.vertex_index[0] = position_index_0
         self.vertex_index[1] = position_index_1
@@ -187,7 +187,7 @@ class COBJFace:
         self.normal_index[3] = 0
 
     def setTexture(self, state : bool):
-        if self.poly_type == COBJFacePolygonType.STAR and state == True:
+        if self.poly_type == COBJPrimitivePolygonType.STAR and state == True:
             raise Exception("Cobj's with stars are untested. Could result in a crash")
 
         self.texture = state
@@ -196,7 +196,7 @@ class COBJFace:
         return self.texture
 
     def setReflective(self, state : bool):
-        if self.poly_type != COBJFacePolygonType.TRIANGLE and self.poly_type != COBJFacePolygonType.QUAD and state == True:
+        if self.poly_type != COBJPrimitivePolygonType.TRIANGLE and self.poly_type != COBJPrimitivePolygonType.QUAD and state == True:
             raise Exception("Cobj's with {} are untested. Could result in a crash".format(self.poly_type))
 
         self.reflective = state
@@ -204,13 +204,19 @@ class COBJFace:
     def getReflective(self):
         return self.reflective
 
+    def setFaceTypeIndex(self, index : int):
+        self.face_type_index = index
+
+    def getFaceTypeIndex(self):
+        return self.face_type_index
+
     def setMaterialBitfield(self, bitfield):
         self.bitfield = bitfield
 
     def getMaterialBitfield(self):
         return self.bitfield
 
-    def make(self, endian, is_mac):
+    def make(self, face_offset_table, endian, is_mac):
         opcode = 0
         
         if self.texture:
@@ -218,7 +224,7 @@ class COBJFace:
             
         opcode |= self.bitfield << 3
         
-        if self.poly_type == COBJFacePolygonType.TRIANGLE:
+        if self.poly_type == COBJPrimitivePolygonType.TRIANGLE:
             opcode |= 3
         else:
             opcode |= 4
@@ -235,11 +241,30 @@ class COBJFace:
         if is_mac:
             opcode = ((opcode & 0xf0) >> 4) | ((opcode & 0x0e) << 3) | ((opcode & 0x01) << 7)
         
-        data += bytearray( struct.pack( "{}BH".format( endian ), opcode, self.face_type_offset) )
+        data += bytearray( struct.pack( "{}BH".format( endian ), opcode, face_offset_table[self.face_type_index]) )
         data += bytearray( struct.pack( "{}BBBB".format( endian ), self.vertex_index[0], self.vertex_index[1], self.vertex_index[2], self.vertex_index[3]) )
         data += bytearray( struct.pack( "{}BBBB".format( endian ), self.normal_index[0], self.normal_index[1], self.normal_index[2], self.normal_index[3]) )
                 
         return data
+
+    def makeChunk(primitive_types : list, face_types : list, endian : str, is_mac : bool):
+        data = bytearray( struct.pack( "{}II".format( endian ), 1, len(primitive_types)) )
+
+        face_offset_table = {}
+        face_offsets = 0
+
+        for i in range(0, len(face_types)):
+            face_offset_table[i] = face_offsets
+
+            if face_types[i].hasTexCoords():
+                face_offsets += 0x10
+            else:
+                face_offsets += 0x04
+
+        for i in primitive_types:
+            data += i.make(face_offset_table, endian, is_mac)
+
+        return COBJChunk("3DQL", endian, data)
 
 class COBJModel:
     def __init__(self):
@@ -249,9 +274,13 @@ class COBJModel:
         self.has_environment_map = False
         self.child_vertex_indexes = [0xFF, 0xFF, 0xFF, 0xFF] # Indexes to self.vertices
         self.face_types = []
+        self.primitives = []
 
     def getFaceTypes(self):
         return self.face_types
+
+    def getPrimitives(self):
+        return self.primitives
 
     def makeHeader(self, endian, is_mac):
         data = bytearray( struct.pack( "{}I".format( endian ), 1) )
@@ -295,6 +324,7 @@ class COBJModel:
         data  = self.makeHeader(endian, is_mac)
         data += COBJFaceType.makeChunk(self.face_types, endian)
         #TODO 3DTA Add texCoords animation chunk support
+        data += COBJPrimitive.makeChunk(self.primitives, self.face_types, endian, is_mac)
         #TODO 3DAL Add animated star color animation chunk support
 
         return data
@@ -308,12 +338,17 @@ class COBJModel:
         
 model = COBJModel()
 
-faceTypes = model.getFaceTypes()
-
 testFaceType = COBJFaceType()
-
 testFaceType.setVertexColor(True, [0xFF, 0, 0x7F])
-
+faceTypes = model.getFaceTypes()
 faceTypes.append(testFaceType)
+
+face = COBJPrimitive()
+face.setTypeTriangle([0, 1, 2], [0, 0, 0])
+face.setTexture(False)
+face.setReflective(False)
+face.setFaceTypeIndex(0)
+primitives = model.getPrimitives()
+primitives.append(face)
 
 model.makeFile("test.cobj", '<', False)
