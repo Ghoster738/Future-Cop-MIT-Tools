@@ -190,6 +190,8 @@ class COBJModel:
     def makeResource(self, endian, is_mac):
         data  = self.makeHeader(endian, is_mac)
         data += COBJFaceType.makeChunk(self.face_types, endian)
+        #TODO 3DTA Add texCoords animation chunk support
+        #TODO 3DAL Add animated star color animation chunk support
 
         return data
 
