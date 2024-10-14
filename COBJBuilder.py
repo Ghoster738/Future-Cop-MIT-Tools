@@ -89,7 +89,7 @@ class COBJFaceType:
 
         return COBJChunk("3DTL", endian, data)
 
-class PolygonType(Enum):
+class COBJFacePolygonType(Enum):
     STAR      = 0
     TRIANGLE  = 3
     QUAD      = 4
@@ -99,13 +99,117 @@ class PolygonType(Enum):
 class COBJFace:
     def __init__(self):
         self.texture = False
-        self.bitfield = 0b0100
+        self.bitfield = 0b1101
         self.reflective = False
-        self.face_type_offset = 0
-        self.poly_type = PolygonType.TRIANGLE
-        self.vertex_index = [0xff, 0xff, 0xff, 0xff]
-        self.normal_index = [0xff, 0xff, 0xff, 0xff]
+        self.face_type = None
+        self.poly_type = COBJFacePolygonType.STAR
+        self.vertex_index = [0, 0, 0, 0]
+        self.normal_index = [0, 0, 0, 0]
+
+    def setTypeStar(self, position_index : int, length_index : int, colors : list):
+        self.poly_type = COBJFacePolygonType.STAR
+
+        if len(colors) < 3:
+            raise Exception("colors is not three but {}".format(len(colors)))
+
+        self.vertex_index[0] = position_index
+        self.vertex_index[1] = colors[0]
+        self.vertex_index[2] = colors[1]
+        self.vertex_index[3] = colors[2]
+
+        self.normal_index[0] = length_index
+        self.normal_index[1] = 0
+        self.normal_index[2] = 0
+        self.normal_index[3] = 0
+
+    def setTypeTriangle(self, position_indexes : list, normal_indexes : list = [0, 0, 0]):
+        self.poly_type = COBJFacePolygonType.TRIANGLE
+
+        if len(position_indexes) < 3:
+            raise Exception("position_indexes is not three but {}".format(len(position_indexes)))
+
+        if len(normal_index) < 3:
+            raise Exception("position_indexes is not three but {}".format(len(position_indexes)))
+
+        self.vertex_index[0] = position_indexes[0]
+        self.vertex_index[1] = position_indexes[1]
+        self.vertex_index[2] = position_indexes[2]
+        self.vertex_index[3] = 0
+
+        self.normal_index[0] = normal_index[0]
+        self.normal_index[1] = normal_index[1]
+        self.normal_index[2] = normal_index[2]
+        self.normal_index[3] = 0
+
+    def setTypeQuad(self, position_indexes : list, normal_index : list = [0, 0, 0, 0]):
+        self.poly_type = COBJFacePolygonType.QUAD
+
+        if len(position_indexes) < 4:
+            raise Exception("position_indexes is not four but {}".format(len(position_indexes)))
+
+        if len(normal_index) < 4:
+            raise Exception("position_indexes is not four but {}".format(len(position_indexes)))
+
+        self.vertex_index[0] = position_indexes[0]
+        self.vertex_index[1] = position_indexes[1]
+        self.vertex_index[2] = position_indexes[2]
+        self.vertex_index[3] = position_indexes[3]
+
+        self.normal_index[0] = normal_indexes[0]
+        self.normal_index[1] = normal_indexes[1]
+        self.normal_index[2] = normal_indexes[2]
+        self.normal_index[3] = normal_indexes[3]
         
+    def setTypeBillboard(self, position_index : int, length_index : int):
+        self.poly_type = COBJFacePolygonType.BILLBOARD
+
+        self.vertex_index[0] = position_index
+        self.vertex_index[1] = 0xFF
+        self.vertex_index[2] = length_index
+        self.vertex_index[3] = 0xFF
+
+        self.normal_index[0] = 0
+        self.normal_index[1] = 0
+        self.normal_index[2] = 0
+        self.normal_index[3] = 0
+
+    def setTypeLine(self, position_index_0 : int, length_index_0 : int, position_index_1 : int, length_index_1 : int):
+        self.poly_type = COBJFacePolygonType.LINE
+
+        self.vertex_index[0] = position_index_0
+        self.vertex_index[1] = position_index_1
+        self.vertex_index[2] = length_index_0
+        self.vertex_index[3] = length_index_1
+
+        self.normal_index[0] = 0
+        self.normal_index[1] = 0
+        self.normal_index[2] = 0
+        self.normal_index[3] = 0
+
+    def setTexture(self, state : bool):
+        if self.poly_type == COBJFacePolygonType.STAR and state == True:
+            raise Exception("Cobj's with stars are untested. Could result in a crash")
+
+        self.texture = state
+
+    def getTexture(self):
+        return self.texture
+
+    def setReflective(self, state : bool):
+        if self.poly_type != COBJFacePolygonType.TRIANGLE and self.poly_type != COBJFacePolygonType.QUAD and state == True:
+            raise Exception("Cobj's with {} are untested. Could result in a crash".format(self.poly_type))
+
+        self.reflective = state
+
+    def getReflective(self):
+        return self.reflective
+
+    def setMaterialBitfield(self, bitfield):
+        self.bitfield = bitfield
+
+    def getMaterialBitfield(self):
+        return self.bitfield
+
     def make(self, endian, is_mac):
         opcode = 0
         
@@ -114,7 +218,7 @@ class COBJFace:
             
         opcode |= self.bitfield << 3
         
-        if self.poly_type == PolygonType.TRIANGLE:
+        if self.poly_type == COBJFacePolygonType.TRIANGLE:
             opcode |= 3
         else:
             opcode |= 4
