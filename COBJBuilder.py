@@ -66,7 +66,55 @@ class COBJModel:
     def __init__(self):
         self.vertices = []
         self.normals = []
+        self.is_semi_transparent = False
         self.has_environment_map = False
-        self.child_vertex_indexes = [] # Indexes to self.vertices
+        self.child_vertex_indexes = [0xFF, 0xFF, 0xFF, 0xFF] # Indexes to self.vertices
         self.face_types = []
+
+    def make(self, endian, is_mac):
+        data = bytearray( struct.pack( "{}III".format( endian ), 0x34444749, 60, 1) )
+
+        # TODO Add animation support
+        data += bytearray( struct.pack( "{}H".format( endian ), 0x1) ) # Amount of frames.
+
+        if is_mac:
+            data += bytearray( struct.pack( "{}B".format( endian ), 0x10) )
+        else:
+            data += bytearray( struct.pack( "{}B".format( endian ), 0x01) )
+
+        bitfield = 0
+
+        if is_mac:
+            m = 8
+        else:
+            m = 0
+
+        #bitfield |= 1 << int(abs(m - 1)) # Skin Animation support
+        bitfield |= 1 << int(abs(m - 3)) # Always on?
+        if self.is_semi_transparent:
+            bitfield |= 1 << int(abs(m - 5))
+        if self.has_environment_map:
+            bitfield |= 1 << int(abs(m - 6))
+        #bitfield |= 1 << int(abs(m - 7)) # Animation support. If Skin Animation support is off then morph animation.
+
+        data += bytearray( struct.pack( "{}B".format( endian ), bitfield) )
+
+        data += bytearray( struct.pack( "{}III".format( endian ), 0, 0, 0) )
+
+        data += bytearray( struct.pack( "{}IIIII".format( endian ), 1, 2, 1, 1, 3) )
+
+        data += bytearray( struct.pack( "{}BBBB".format( endian ), self.child_vertex_indexes[0], self.child_vertex_indexes[1], self.child_vertex_indexes[2], self.child_vertex_indexes[3]) )
+
+        data += bytearray( struct.pack( "{}II".format( endian ), 4, 5) )
+
+        return data
+
+    def makeWholeFile(self, endian, is_mac):
+        data = self.make(endian, is_mac)
+        print(data)
+        new_file = open( "test.cobj", "wb" )
+        new_file.write( data )
+
         
+model = COBJModel()
+model.makeWholeFile('<', False)
