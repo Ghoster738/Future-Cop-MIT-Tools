@@ -1,6 +1,20 @@
 import struct
 from enum import Enum
 
+def COBJChunk(chunk_id : str, endian : str, byte_data : bytearray):
+    chunk_ascii = list(chunk_id.encode('ascii'))
+
+    if len(chunk_id) != 4:
+        print("chunk_id is not four but", len(chunk_id))
+        exit()
+
+    chunk_number = (chunk_ascii[0] << 24) | (chunk_ascii[1] << 16) | (chunk_ascii[2] << 8) | (chunk_ascii[3])
+
+    data = bytearray( struct.pack( "{}II".format( endian ), chunk_number, len(byte_data) + 8) )
+    data += byte_data
+
+    return data
+
 class COBJFaceType:
     def __init__(self):
         self.opcodes = [1,0,0,0]
@@ -16,6 +30,7 @@ class COBJFaceType:
         return data
 
 class PolygonType(Enum):
+    STAR      = 0
     TRIANGLE  = 3
     QUAD      = 4
     BILLBOARD = 5
@@ -71,8 +86,8 @@ class COBJModel:
         self.child_vertex_indexes = [0xFF, 0xFF, 0xFF, 0xFF] # Indexes to self.vertices
         self.face_types = []
 
-    def make(self, endian, is_mac):
-        data = bytearray( struct.pack( "{}III".format( endian ), 0x34444749, 60, 1) )
+    def makeHeader(self, endian, is_mac):
+        data = bytearray( struct.pack( "{}I".format( endian ), 1) )
 
         # TODO Add animation support
         data += bytearray( struct.pack( "{}H".format( endian ), 0x1) ) # Amount of frames.
@@ -107,14 +122,19 @@ class COBJModel:
 
         data += bytearray( struct.pack( "{}II".format( endian ), 4, 5) )
 
+        return COBJChunk("4DGI", endian, data)
+
+    def makeResource(self, endian, is_mac):
+        data = self.makeHeader(endian, is_mac)
+
         return data
 
-    def makeWholeFile(self, endian, is_mac):
-        data = self.make(endian, is_mac)
-        print(data)
-        new_file = open( "test.cobj", "wb" )
+    def makeFile(self, filepath, endian, is_mac):
+        data = self.makeResource(endian, is_mac)
+
+        new_file = open( filepath, "wb" )
         new_file.write( data )
 
         
 model = COBJModel()
-model.makeWholeFile('<', False)
+model.makeFile("test.cobj", '<', False)
