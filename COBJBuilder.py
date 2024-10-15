@@ -266,10 +266,56 @@ class COBJPrimitive:
 
         return COBJChunk("3DQL", endian, data)
 
+class COBJVector3DArray:
+    def __init__(self, length: int, value: tuple[int, int, int] = (0, 0, 0)):
+        self.vector = [value] * length
+
+    def setValue(self, index: int, value: tuple[int, int, int]):
+        self.vector[index] = value
+
+    def getValue(self, index: int):
+        return self.vector[index]
+
+class COBJLengthArray:
+    def __init__(self, length: int):
+        self.vector = [0] * length
+
+    def setValue(self, index: int, value: int):
+        self.vector[index] = value
+
+    def getValue(self, index: int):
+        return self.vector[index]
+
+class COBJBufferIDFrame:
+    def __init__(self, vertex_buffer_id: int, normal_buffer_id : int, length_buffer_id : int):
+        self.vertex_buffer_id = vertex_buffer_id
+        self.normal_buffer_id = normal_buffer_id
+        self.length_buffer_id = length_buffer_id
+
+    def getVertexBufferID(self):
+        return self.vertex_buffer_id
+
+    def setVertexBufferID(self, buffer_id: int):
+        self.vertex_buffer_id = buffer_id
+
+    def getNormalBufferID(self):
+        return self.normal_buffer_id
+
+    def setNormalBufferID(self, buffer_id: int):
+        self.normal_buffer_id = buffer_id
+
+    def getLengthBufferID(self):
+        return self.length_buffer_id
+
+    def getLengthBufferID(self, buffer_id: int):
+        self.length_buffer_id = buffer_id
+
 class COBJModel:
     def __init__(self):
-        self.vertices = []
-        self.normals = []
+        self.vertex_buffer_ids = {}
+        self.normal_buffer_ids = {}
+        self.length_buffer_ids = {}
+        self.buffer_id_frames = []
         self.is_semi_transparent = False
         self.has_environment_map = False
         self.child_vertex_indexes = [0xFF, 0xFF, 0xFF, 0xFF] # Indexes to self.vertices
@@ -281,6 +327,21 @@ class COBJModel:
 
     def getPrimitives(self):
         return self.primitives
+
+    def allocateVertexBuffers(self, frame_amount : int, vertex_amount : int, normal_amount : int, length_amount : int):
+        for i in range(0, frame_amount):
+            #TODO Add safety
+
+            vertex_id = i
+            self.vertex_buffer_ids[vertex_id] = COBJVector3DArray(vertex_amount)
+
+            normal_id = i
+            self.normal_buffer_ids[normal_id] = COBJVector3DArray(normal_amount, (4096, 0, 0))
+
+            length_id = i
+            self.length_buffer_ids[length_id] =   COBJLengthArray(length_amount)
+
+            self.buffer_id_frames.append( COBJBufferIDFrame(vertex_id, normal_id, length_id) )
 
     def makeHeader(self, endian, is_mac):
         data = bytearray( struct.pack( "{}I".format( endian ), 1) )
@@ -350,5 +411,7 @@ face.setReflective(False)
 face.setFaceTypeIndex(0)
 primitives = model.getPrimitives()
 primitives.append(face)
+
+model.allocateVertexBuffers(1, 3, 0, 0)
 
 model.makeFile("test.cobj", '<', False)
