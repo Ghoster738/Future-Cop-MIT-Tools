@@ -279,6 +279,14 @@ class COBJVector3DArray:
     def getValue(self, index: int):
         return self.vector[index]
 
+    def makeChunk(self, vector_id: int, chunk_name: str, endian : str):
+        data = bytearray( struct.pack( "{}II".format( endian ), vector_id, len(self.vector)) )
+
+        for i in self.vector:
+            data += bytearray( struct.pack( "{}HHHH".format( endian ), i[0], i[1], i[2], 0xFFFF) )
+
+        return COBJChunk(chunk_name, endian, data)
+
 
 class COBJLengthArray:
     def __init__(self, length: int):
@@ -289,6 +297,14 @@ class COBJLengthArray:
 
     def getValue(self, index: int):
         return self.vector[index]
+
+    def makeChunk(self, vector_id: int, endian : str):
+        data = bytearray( struct.pack( "{}II".format( endian ), vector_id, len(self.vector)) )
+
+        for i in self.vector:
+            data += bytearray( struct.pack( "{}HHHH".format( endian ), i[0], i[1], i[2], 0) )
+
+        return COBJChunk("3DRL", endian, data)
 
 class COBJBufferIDFrame:
     def __init__(self, vertex_buffer_id: int, normal_buffer_id : int, length_buffer_id : int):
@@ -373,9 +389,16 @@ class COBJModel:
             self.normal_buffer_ids[normal_id] = COBJVector3DArray(normal_amount, (4096, 0, 0))
 
             length_id = i + 1
-            self.length_buffer_ids[length_id] =   COBJLengthArray(length_amount)
+            self.length_buffer_ids[length_id] = COBJLengthArray(length_amount)
 
             self.buffer_id_frames.append( COBJBufferIDFrame(vertex_id, normal_id, length_id) )
+
+    def getVertexBuffer(self, frame_index : int):
+        return (
+            self.vertex_buffer_ids[self.buffer_id_frames[frame_index].getVertexBufferID()],
+            self.normal_buffer_ids[self.buffer_id_frames[frame_index].getNormalBufferID()],
+            self.length_buffer_ids[self.buffer_id_frames[frame_index].getLengthBufferID()]
+            )
 
     def makeHeader(self, endian, is_mac):
         data = bytearray( struct.pack( "{}I".format( endian ), 1) )
@@ -423,6 +446,11 @@ class COBJModel:
         #TODO 3DAL Add animated star color animation chunk support
         data += COBJBufferIDFrame.makeChunks(self.buffer_id_frames, endian)
 
+        for i in self.buffer_id_frames:
+            data += self.vertex_buffer_ids[i.getVertexBufferID()].makeChunk(i.getVertexBufferID(), "4DVL", endian)
+            data += self.normal_buffer_ids[i.getNormalBufferID()].makeChunk(i.getNormalBufferID(), "4DNL", endian)
+            data += self.length_buffer_ids[i.getLengthBufferID()].makeChunk(i.getLengthBufferID(), endian)
+
         return data
 
     def makeFile(self, filepath, endian, is_mac):
@@ -448,5 +476,9 @@ primitives = model.getPrimitives()
 primitives.append(face)
 
 model.allocateVertexBuffers(1, 3, 0, 0)
+vertexBuffer = model.getVertexBuffer(0)
+
+vertexBuffer[0].setValue(1, (512,   0, 0))
+vertexBuffer[0].setValue(2, (512, 512, 0))
 
 model.makeFile("test.cobj", '<', False)
