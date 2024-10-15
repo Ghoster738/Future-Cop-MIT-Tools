@@ -1,4 +1,5 @@
 import struct
+import math
 from enum import Enum
 
 def COBJStrToChunkID(chunk_id : str):
@@ -279,6 +280,9 @@ class COBJVector3DArray:
     def getValue(self, index: int):
         return self.vector[index]
 
+    def getValueAmount(self):
+        return len(self.vector)
+
     def makeChunk(self, vector_id: int, chunk_name: str, endian : str):
         data = bytearray( struct.pack( "{}II".format( endian ), vector_id, len(self.vector)) )
 
@@ -297,6 +301,9 @@ class COBJLengthArray:
 
     def getValue(self, index: int):
         return self.vector[index]
+
+    def getValueAmount(self):
+        return len(self.vector)
 
     def makeChunk(self, vector_id: int, endian : str):
         data = bytearray( struct.pack( "{}II".format( endian ), vector_id, len(self.vector)) )
@@ -360,6 +367,70 @@ class COBJBufferIDFrame:
         data += COBJBufferIDFrame.makeLengthChunk(buffer_id_frames, endian)
         return data;
 
+class COBJBoundingBox:
+    def __init__(self):
+        self.position_x = 0
+        self.position_y = 0
+        self.position_z = 0
+        self.length_x = 0
+        self.length_y = 0
+        self.length_z = 0
+        self.pyth_3 = 0
+        self.pyth_2 = 0
+
+    def updatePyth(self):
+        x_sq = self.length_x * self.length_x
+        y_sq = self.length_y * self.length_y
+        z_sq = self.length_z * self.length_z
+
+        self.pyth_3 = int(math.sqrt(x_sq + y_sq + z_sq))
+        self.pyth_2 = int(math.sqrt(x_sq + z_sq))
+
+    def makeVertexBB(positionBuffer : COBJVector3DArray):
+        new_box = COBJBoundingBox()
+
+        min_x =  0x20000
+        min_y =  0x20000
+        min_z =  0x20000
+        max_x = -0x20000
+        max_y = -0x20000
+        max_z = -0x20000
+
+        for i in range(0, positionBuffer.getValueAmount()):
+            position = positionBuffer.getValue(i)
+
+            min_x = min(min_x, position[0])
+            max_x = max(max_x, position[0])
+
+            min_y = min(min_y, position[1])
+            max_y = max(max_y, position[1])
+
+            min_z = min(min_z, position[2])
+            max_z = max(max_z, position[2])
+
+        new_box.position_x = int((max_x + min_x) / 2)
+        new_box.position_y = int((max_y + min_y) / 2)
+        new_box.position_z = int((max_z + min_z) / 2)
+
+        new_box.length_x = int(abs(max_x - min_x) / 2)
+        new_box.length_y = int(abs(max_y - min_y) / 2)
+        new_box.length_z = int(abs(max_z - min_z) / 2)
+
+        new_box.updatePyth()
+
+        return new_box
+
+    def make(self, endian : str):
+        return bytearray( struct.pack( "{}HHHHHHHH".format( endian ),
+                    self.position_x, self.position_y, self.position_z,
+                    self.length_x, self.length_y, self.length_z,
+                    self.pyth_3, self.pyth_2) )
+
+    def makeChunkSingle(self, endian : str):
+        data  = bytearray( struct.pack( "{}II".format( endian ), 1, 1) )
+        data += self.make(endian)
+        return COBJChunk("3DBB", endian, data);
+
 class COBJModel:
     def __init__(self):
         self.vertex_buffer_ids = {}
@@ -368,7 +439,7 @@ class COBJModel:
         self.buffer_id_frames = []
         self.is_semi_transparent = False
         self.has_environment_map = False
-        self.child_vertex_indexes = [0xFF, 0xFF, 0xFF, 0xFF] # Indexes to self.vertices
+        self.child_vertex_indexes = [0xFF, 0xFF, 0xFF, 0xFF] # Indexes to vertex buffers
         self.face_types = []
         self.primitives = []
 
@@ -450,6 +521,10 @@ class COBJModel:
             data += self.vertex_buffer_ids[i.getVertexBufferID()].makeChunk(i.getVertexBufferID(), "4DVL", endian)
             data += self.normal_buffer_ids[i.getNormalBufferID()].makeChunk(i.getNormalBufferID(), "4DNL", endian)
             data += self.length_buffer_ids[i.getLengthBufferID()].makeChunk(i.getLengthBufferID(), endian)
+
+        new_box = COBJBoundingBox.makeVertexBB(self.vertex_buffer_ids[self.buffer_id_frames[0].getVertexBufferID()])
+
+        data += new_box.makeChunkSingle(endian)
 
         return data
 
