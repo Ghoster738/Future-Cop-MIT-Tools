@@ -1,13 +1,16 @@
 import struct
 from enum import Enum
 
-def COBJChunk(chunk_id : str, endian : str, byte_data : bytearray):
+def COBJStrToChunkID(chunk_id : str):
     chunk_ascii = list(chunk_id.encode('ascii'))
 
     if len(chunk_id) != 4:
         raise Exception("chunk_id '{}' is not four but {}".format(chunk_id, len(chunk_id)))
 
-    chunk_number = (chunk_ascii[0] << 24) | (chunk_ascii[1] << 16) | (chunk_ascii[2] << 8) | (chunk_ascii[3])
+    return (chunk_ascii[0] << 24) | (chunk_ascii[1] << 16) | (chunk_ascii[2] << 8) | (chunk_ascii[3])
+
+def COBJChunk(chunk_id : str, endian : str, byte_data : bytearray):
+    chunk_number = COBJStrToChunkID(chunk_id)
 
     data = bytearray( struct.pack( "{}II".format( endian ), chunk_number, len(byte_data) + 8) )
     data += byte_data
@@ -276,6 +279,7 @@ class COBJVector3DArray:
     def getValue(self, index: int):
         return self.vector[index]
 
+
 class COBJLengthArray:
     def __init__(self, length: int):
         self.vector = [0] * length
@@ -307,8 +311,38 @@ class COBJBufferIDFrame:
     def getLengthBufferID(self):
         return self.length_buffer_id
 
-    def getLengthBufferID(self, buffer_id: int):
+    def setLengthBufferID(self, buffer_id: int):
         self.length_buffer_id = buffer_id
+
+    def makeVertexChunk(buffer_id_frames : list, endian : str):
+        data = bytearray( struct.pack( "{}III".format( endian ), 1, COBJStrToChunkID("4DVL"), len(buffer_id_frames)) )
+
+        for i in buffer_id_frames:
+            data += bytearray( struct.pack( "{}I".format( endian ), i.getVertexBufferID()) )
+
+        return COBJChunk("3DRF", endian, data)
+
+    def makeNormalChunk(buffer_id_frames : list, endian : str):
+        data = bytearray( struct.pack( "{}III".format( endian ), 2, COBJStrToChunkID("4DNL"), len(buffer_id_frames)) )
+
+        for i in buffer_id_frames:
+            data += bytearray( struct.pack( "{}I".format( endian ), i.getNormalBufferID()) )
+
+        return COBJChunk("3DRF", endian, data)
+
+    def makeLengthChunk(buffer_id_frames : list, endian : str):
+        data = bytearray( struct.pack( "{}III".format( endian ), 3, COBJStrToChunkID("3DRL"), len(buffer_id_frames)) )
+
+        for i in buffer_id_frames:
+            data += bytearray( struct.pack( "{}I".format( endian ), i.getLengthBufferID()) )
+
+        return COBJChunk("3DRF", endian, data)
+
+    def makeChunks(buffer_id_frames : list, endian : str):
+        data  = COBJBufferIDFrame.makeVertexChunk(buffer_id_frames, endian)
+        data += COBJBufferIDFrame.makeNormalChunk(buffer_id_frames, endian)
+        data += COBJBufferIDFrame.makeLengthChunk(buffer_id_frames, endian)
+        return data;
 
 class COBJModel:
     def __init__(self):
@@ -332,13 +366,13 @@ class COBJModel:
         for i in range(0, frame_amount):
             #TODO Add safety
 
-            vertex_id = i
+            vertex_id = i + 1
             self.vertex_buffer_ids[vertex_id] = COBJVector3DArray(vertex_amount)
 
-            normal_id = i
+            normal_id = i + 1
             self.normal_buffer_ids[normal_id] = COBJVector3DArray(normal_amount, (4096, 0, 0))
 
-            length_id = i
+            length_id = i + 1
             self.length_buffer_ids[length_id] =   COBJLengthArray(length_amount)
 
             self.buffer_id_frames.append( COBJBufferIDFrame(vertex_id, normal_id, length_id) )
@@ -387,6 +421,7 @@ class COBJModel:
         #TODO 3DTA Add texCoords animation chunk support
         data += COBJPrimitive.makeChunk(self.primitives, self.face_types, endian, is_mac)
         #TODO 3DAL Add animated star color animation chunk support
+        data += COBJBufferIDFrame.makeChunks(self.buffer_id_frames, endian)
 
         return data
 
