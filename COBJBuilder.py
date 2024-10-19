@@ -479,7 +479,7 @@ class COBJModel:
     def setChildVertexPosition(self, frame_index : int, index : int, value: tuple[int, int, int]):
         self.child_vertex_positions[frame_index][index] = value
 
-    def findChildVertexIndex(self, index : int):
+    def findChildVertexIndex(self, index : int, not_found_value : int = 0xff):
         if index >= len(self.child_vertex_positions[0]):
             return 0xff;
 
@@ -489,7 +489,26 @@ class COBJModel:
             if vertex_buffer.getValue(i) == self.child_vertex_positions[0][index]:
                 return i
 
-        return 0xff;
+        return not_found_value;
+
+    def setupChildVertices(self):
+        for i in range(0, len(self.child_vertex_positions[0])):
+            # If vertex buffer does have the child position then skip to the next vertex
+            if self.findChildVertexIndex(i, 0xffff) != 0xffff:
+                continue
+
+            vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[0].getVertexBufferID()]
+
+            # Check if space is available on the position buffers.
+            if vertex_buffer.getValueAmount() + 1 >= 0x100:
+                raise Exception("Child Vertex Position[{}] {} could not be added since the vertex_position would exceed {} limit".format(i, self.getChildVertexPosition(0, i), 0x100))
+
+            # For every position buffer add a vertice in the back.
+            for f in range(0, len(self.buffer_id_frames)):
+                vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
+
+                # This is an iffy way of doing things, but this will have to do for now.
+                vertex_buffer.vector.append( self.getChildVertexPosition(f, i) )
 
     def makeHeader(self, endian, is_mac):
         data = bytearray( struct.pack( "{}I".format( endian ), 1) )
@@ -577,9 +596,15 @@ primitives = model.getPrimitives()
 primitives.append(face)
 
 model.allocateVertexBuffers(1, 3, 0, 0, 1)
+
+model.setChildVertexPosition(0, 0, (512,  22, 0))
+
 vertexBuffer = model.getVertexBuffer(0)
 
+vertexBuffer[0].setValue(0, (  0,   0, 0))
 vertexBuffer[0].setValue(1, (512,   0, 0))
 vertexBuffer[0].setValue(2, (512, 512, 0))
+
+model.setupChildVertices()
 
 model.makeFile("test.cobj", '<', False)
