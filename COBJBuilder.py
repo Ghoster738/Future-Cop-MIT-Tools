@@ -488,12 +488,14 @@ class COBJModel:
 
             self.buffer_id_frames.append( COBJBufferIDFrame(vertex_id, normal_id, length_id) )
 
-    def getVertexBuffer(self, frame_index : int):
-        return (
-            self.vertex_buffer_ids[self.buffer_id_frames[frame_index].getVertexBufferID()],
-            self.normal_buffer_ids[self.buffer_id_frames[frame_index].getNormalBufferID()],
-            self.length_buffer_ids[self.buffer_id_frames[frame_index].getLengthBufferID()]
-            )
+    def getPositionBuffer(self, frame_index : int):
+        return self.vertex_buffer_ids[self.buffer_id_frames[frame_index].getVertexBufferID()]
+
+    def getNoramlBuffer(self, frame_index : int):
+        return self.normal_buffer_ids[self.buffer_id_frames[frame_index].getNormalBufferID()]
+
+    def getLengthBuffer(self, frame_index : int):
+        return self.length_buffer_ids[self.buffer_id_frames[frame_index].getLengthBufferID()]
 
     def getChildVertexPosition(self, frame_index : int, index : int):
         return self.child_vertex_positions[frame_index][index]
@@ -619,11 +621,11 @@ model.allocateVertexBuffers(1, 3, 0, 0, 1)
 
 model.setChildVertexPosition(0, 0, (512, 0, 0))
 
-vertexBuffer = model.getVertexBuffer(0)
+positionBuffer = model.getPositionBuffer(0)
 
-vertexBuffer[0].setValue(0, (  0,   0, 0))
-vertexBuffer[0].setValue(1, (512,   0, 0))
-vertexBuffer[0].setValue(2, (512, 512, 0))
+positionBuffer.setValue(0, (  0,   0, 0))
+positionBuffer.setValue(1, (512,   0, 0))
+positionBuffer.setValue(2, (512, 512, 0))
 
 model.setupChildVertices()
 
