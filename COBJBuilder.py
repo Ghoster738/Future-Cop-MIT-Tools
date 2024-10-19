@@ -421,7 +421,7 @@ class COBJBoundingBox:
         return new_box
 
     def make(self, endian : str):
-        return bytearray( struct.pack( "{}HHHHHHHH".format( endian ),
+        return bytearray( struct.pack( "{}hhhHHHHH".format( endian ),
                     self.position_x, self.position_y, self.position_z,
                     self.length_x, self.length_y, self.length_z,
                     self.pyth_3, self.pyth_2) )
@@ -510,7 +510,7 @@ class COBJModel:
                 # This is an iffy way of doing things, but this will have to do for now.
                 vertex_buffer.vector.append( self.getChildVertexPosition(f, i) )
 
-    def makeHeader(self, endian, is_mac):
+    def makeHeader(self, endian : str, is_mac : bool):
         data = bytearray( struct.pack( "{}I".format( endian ), 1) )
 
         # TODO Add animation support
@@ -554,7 +554,7 @@ class COBJModel:
 
         return COBJChunk("4DGI", endian, data)
 
-    def makeResource(self, endian, is_mac):
+    def makeResource(self, endian : str, is_mac : bool):
         data  = self.makeHeader(endian, is_mac)
         data += COBJFaceType.makeChunk(self.face_types, endian)
         #TODO 3DTA Add texCoords animation chunk support
@@ -573,7 +573,7 @@ class COBJModel:
 
         return data
 
-    def makeFile(self, filepath, endian, is_mac):
+    def makeFile(self, filepath : str, endian : str, is_mac : bool):
         data = self.makeResource(endian, is_mac)
 
         new_file = open( filepath, "wb" )
@@ -597,7 +597,7 @@ primitives.append(face)
 
 model.allocateVertexBuffers(1, 3, 0, 0, 1)
 
-model.setChildVertexPosition(0, 0, (512,  22, 0))
+model.setChildVertexPosition(0, 0, (512, 0, 0))
 
 vertexBuffer = model.getVertexBuffer(0)
 
