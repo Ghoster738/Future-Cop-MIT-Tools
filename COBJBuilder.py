@@ -373,19 +373,15 @@ class COBJBufferIDFrame:
 
 class COBJBoundingBox:
     def __init__(self):
-        self.position_x = 0
-        self.position_y = 0
-        self.position_z = 0
-        self.length_x = 0
-        self.length_y = 0
-        self.length_z = 0
+        self.position = (0, 0, 0)
+        self.length = (0, 0, 0)
         self.pyth_3 = 0
         self.pyth_2 = 0
 
     def updatePyth(self):
-        x_sq = self.length_x * self.length_x
-        y_sq = self.length_y * self.length_y
-        z_sq = self.length_z * self.length_z
+        x_sq = self.length[0] * self.length[0]
+        y_sq = self.length[1] * self.length[1]
+        z_sq = self.length[2] * self.length[2]
 
         self.pyth_3 = int(math.sqrt(x_sq + y_sq + z_sq))
         self.pyth_2 = int(math.sqrt(x_sq + z_sq))
@@ -412,13 +408,9 @@ class COBJBoundingBox:
             min_z = min(min_z, position[2])
             max_z = max(max_z, position[2])
 
-        new_box.position_x = int((max_x + min_x) / 2)
-        new_box.position_y = int((max_y + min_y) / 2)
-        new_box.position_z = int((max_z + min_z) / 2)
+        new_box.position = (int((max_x + min_x) / 2), int((max_y + min_y) / 2), int((max_z + min_z) / 2))
 
-        new_box.length_x = int(abs(max_x - min_x) / 2)
-        new_box.length_y = int(abs(max_y - min_y) / 2)
-        new_box.length_z = int(abs(max_z - min_z) / 2)
+        new_box.length = (int(abs(max_x - min_x) / 2), int(abs(max_y - min_y) / 2), int(abs(max_z - min_z) / 2))
 
         new_box.updatePyth()
 
@@ -426,8 +418,8 @@ class COBJBoundingBox:
 
     def make(self, endian : str):
         return bytearray( struct.pack( "{}hhhHHHHH".format( endian ),
-                    self.position_x, self.position_y, self.position_z,
-                    self.length_x, self.length_y, self.length_z,
+                    self.position[0], self.position[1], self.position[2],
+                    self.length[0], self.length[1], self.length[2],
                     self.pyth_3, self.pyth_2) )
 
     def makeChunkSingle(self, endian : str):
