@@ -447,8 +447,17 @@ class COBJModel:
         self.face_types = []
         self.primitives = []
 
-    def getFaceTypes(self):
-        return self.face_types
+    def getFaceTypeAmount(self):
+        return len(self.face_types)
+
+    def getFaceType(self, index : int):
+        return self.face_types[index]
+
+    def appendFaceType(self, face_type : COBJFaceType):
+        self.face_types.append(face_type)
+
+    def insertFaceType(self, index : int, face_type : COBJFaceType):
+        self.face_types.insert(index, face_type)
 
     def getPrimitives(self):
         return self.primitives
@@ -588,8 +597,7 @@ model = COBJModel()
 
 testFaceType = COBJFaceType()
 testFaceType.setVertexColor(True, [0xFF, 0, 0x7F])
-faceTypes = model.getFaceTypes()
-faceTypes.append(testFaceType)
+model.appendFaceType(testFaceType)
 
 face = COBJPrimitive()
 face.setTypeTriangle([0, 1, 2], [0, 0, 0])
