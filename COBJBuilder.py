@@ -287,7 +287,7 @@ class COBJVector3DArray:
         data = bytearray( struct.pack( "{}II".format( endian ), vector_id, len(self.vector)) )
 
         for i in self.vector:
-            data += bytearray( struct.pack( "{}HHHH".format( endian ), i[0], i[1], i[2], 0xFFFF) )
+            data += bytearray( struct.pack( "{}hhhh".format( endian ), i[0], i[1], i[2], 0) )
 
         return COBJChunk(chunk_name, endian, data)
 
@@ -309,7 +309,7 @@ class COBJLengthArray:
         data = bytearray( struct.pack( "{}II".format( endian ), vector_id, len(self.vector)) )
 
         for i in self.vector:
-            data += bytearray( struct.pack( "{}HHHH".format( endian ), i[0], i[1], i[2], 0) )
+            data += bytearray( struct.pack( "{}h".format( endian ), i) )
 
         return COBJChunk("3DRL", endian, data)
 
@@ -439,7 +439,6 @@ class COBJModel:
         self.buffer_id_frames = []
         self.is_semi_transparent = False
         self.has_environment_map = False
-        self.child_vertex_indexes = [0xFF, 0xFF, 0xFF, 0xFF] # Indexes to vertex buffers
         self.face_types = []
         self.primitives = []
 
@@ -503,7 +502,9 @@ class COBJModel:
 
         data += bytearray( struct.pack( "{}IIIII".format( endian ), 1, 2, 1, 1, 3) )
 
-        data += bytearray( struct.pack( "{}BBBB".format( endian ), self.child_vertex_indexes[0], self.child_vertex_indexes[1], self.child_vertex_indexes[2], self.child_vertex_indexes[3]) )
+        child_vertex_indexes = [0xFF, 0xFF, 0xFF, 0xFF] # Indexes to vertex buffers
+
+        data += bytearray( struct.pack( "{}BBBB".format( endian ), child_vertex_indexes[0], child_vertex_indexes[1], child_vertex_indexes[2], child_vertex_indexes[3]) )
 
         data += bytearray( struct.pack( "{}II".format( endian ), 4, 5) )
 
