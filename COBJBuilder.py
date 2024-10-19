@@ -439,6 +439,7 @@ class COBJModel:
         self.buffer_id_frames = []
         self.is_semi_transparent = False
         self.has_environment_map = False
+        self.child_vertex_positions = []
         self.face_types = []
         self.primitives = []
 
@@ -448,7 +449,9 @@ class COBJModel:
     def getPrimitives(self):
         return self.primitives
 
-    def allocateVertexBuffers(self, frame_amount : int, vertex_amount : int, normal_amount : int, length_amount : int):
+    def allocateVertexBuffers(self, frame_amount : int, vertex_amount : int, normal_amount : int, length_amount : int, child_model_amount : int):
+        self.child_vertex_positions = [[(0, 0, 0)] * child_model_amount] * frame_amount
+
         for i in range(0, frame_amount):
             #TODO Add safety
 
@@ -469,6 +472,24 @@ class COBJModel:
             self.normal_buffer_ids[self.buffer_id_frames[frame_index].getNormalBufferID()],
             self.length_buffer_ids[self.buffer_id_frames[frame_index].getLengthBufferID()]
             )
+
+    def getChildVertexPosition(self, frame_index : int, index : int):
+        return self.child_vertex_positions[frame_index][index]
+
+    def setChildVertexPosition(self, frame_index : int, index : int, value: tuple[int, int, int]):
+        self.child_vertex_positions[frame_index][index] = value
+
+    def findChildVertexIndex(self, index : int):
+        if index >= len(self.child_vertex_positions[0]):
+            return 0xff;
+
+        vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[0].getVertexBufferID()]
+
+        for i in range(0, vertex_buffer.getValueAmount()):
+            if vertex_buffer.getValue(i) == self.child_vertex_positions[0][index]:
+                return i
+
+        return 0xff;
 
     def makeHeader(self, endian, is_mac):
         data = bytearray( struct.pack( "{}I".format( endian ), 1) )
@@ -502,7 +523,11 @@ class COBJModel:
 
         data += bytearray( struct.pack( "{}IIIII".format( endian ), 1, 2, 1, 1, 3) )
 
-        child_vertex_indexes = [0xFF, 0xFF, 0xFF, 0xFF] # Indexes to vertex buffers
+        child_vertex_indexes = [
+            self.findChildVertexIndex(0),
+            self.findChildVertexIndex(1),
+            self.findChildVertexIndex(2),
+            self.findChildVertexIndex(3)] # Indexes to vertex buffers
 
         data += bytearray( struct.pack( "{}BBBB".format( endian ), child_vertex_indexes[0], child_vertex_indexes[1], child_vertex_indexes[2], child_vertex_indexes[3]) )
 
@@ -551,7 +576,7 @@ face.setFaceTypeIndex(0)
 primitives = model.getPrimitives()
 primitives.append(face)
 
-model.allocateVertexBuffers(1, 3, 0, 0)
+model.allocateVertexBuffers(1, 3, 0, 0, 1)
 vertexBuffer = model.getVertexBuffer(0)
 
 vertexBuffer[0].setValue(1, (512,   0, 0))
