@@ -311,6 +311,10 @@ class COBJLengthArray:
         for i in self.vector:
             data += bytearray( struct.pack( "{}h".format( endian ), i) )
 
+        # Enforce 4 byte alignment.
+        if len(self.vector) % 2 != 0:
+            data += bytearray( struct.pack( "{}h".format( endian ), 0) )
+
         return COBJChunk("3DRL", endian, data)
 
 class COBJBufferIDFrame:
