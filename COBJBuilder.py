@@ -378,6 +378,19 @@ class COBJBoundingBox:
         self.pyth_3 = 0
         self.pyth_2 = 0
 
+    def setPosition(self, position : tuple[int, int, int]):
+        self.position = position
+
+    def getPosition(self):
+        return self.position
+
+    def setLength(self, length : tuple[int, int, int]):
+        self.length = length
+        self.updatePyth()
+
+    def getLength(self):
+        return self.length
+
     def updatePyth(self):
         x_sq = self.length[0] * self.length[0]
         y_sq = self.length[1] * self.length[1]
