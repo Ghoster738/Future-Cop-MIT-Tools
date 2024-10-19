@@ -459,8 +459,17 @@ class COBJModel:
     def insertFaceType(self, index : int, face_type : COBJFaceType):
         self.face_types.insert(index, face_type)
 
-    def getPrimitives(self):
-        return self.primitives
+    def getPrimitiveAmount(self):
+        return len(self.primitives)
+
+    def getPrimitive(self, index : int):
+        return self.primitives[index]
+
+    def appendPrimitive(self, primitive : COBJPrimitive):
+        self.primitives.append(primitive)
+
+    def insertPrimitive(self, index : int, primitive : COBJPrimitive):
+        self.primitives.insert(index, primitive)
 
     def allocateVertexBuffers(self, frame_amount : int, vertex_amount : int, normal_amount : int, length_amount : int, child_model_amount : int):
         self.child_vertex_positions = [[(0, 0, 0)] * child_model_amount] * frame_amount
@@ -604,8 +613,7 @@ face.setTypeTriangle([0, 1, 2], [0, 0, 0])
 face.setTexture(False)
 face.setReflective(False)
 face.setFaceTypeIndex(0)
-primitives = model.getPrimitives()
-primitives.append(face)
+model.appendPrimitive(face)
 
 model.allocateVertexBuffers(1, 3, 0, 0, 1)
 
