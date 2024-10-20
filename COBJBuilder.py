@@ -451,6 +451,7 @@ class COBJModel:
         self.child_vertex_positions = []
         self.face_types = []
         self.primitives = []
+        self.bounding_box_frame_data = []
 
     def getFaceTypeAmount(self):
         return len(self.face_types)
@@ -476,8 +477,9 @@ class COBJModel:
     def insertPrimitive(self, index : int, primitive : COBJPrimitive):
         self.primitives.insert(index, primitive)
 
-    def allocateVertexBuffers(self, frame_amount : int, vertex_amount : int, normal_amount : int, length_amount : int, child_model_amount : int):
+    def allocateVertexBuffers(self, frame_amount : int, vertex_amount : int, normal_amount : int, length_amount : int, child_model_amount : int, bounding_box_amount : int):
         self.child_vertex_positions = [[(0, 0, 0)] * child_model_amount] * frame_amount
+        self.bounding_box_frame_data = [[COBJBoundingBox] * bounding_box_amount] * frame_amount
 
         for i in range(0, frame_amount):
             #TODO Add safety
@@ -523,13 +525,28 @@ class COBJModel:
     def setupChildVertices(self):
         for i in range(0, len(self.child_vertex_positions[0])):
             # If vertex buffer does have the child position then skip to the next vertex
-            if self.findChildVertexIndex(i, 0xffff) != 0xffff:
+            index = self.findChildVertexIndex(i, 0xffff)
+
+            if index != 0xffff:
                 continue
+
+            if len(self.buffer_id_frames) != 1:
+                found = False
+
+                for f in range(1, len(self.buffer_id_frames)):
+                    vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
+
+                    if vertex_buffer.getValue(index) == self.child_vertex_positions[f]:
+                        found = True
+                        continue
+
+                if found:
+                    continue
 
             vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[0].getVertexBufferID()]
 
             # Check if space is available on the position buffers.
-            if vertex_buffer.getValueAmount() + 1 >= 0x100:
+            if vertex_buffer.getValueAmount() + 1 > 0x100:
                 raise Exception("Child Vertex Position[{}] {} could not be added since the vertex_position would exceed {} limit".format(i, self.getChildVertexPosition(0, i), 0x100))
 
             # For every position buffer add a vertice in the back.
@@ -543,7 +560,7 @@ class COBJModel:
         data = bytearray( struct.pack( "{}I".format( endian ), 1) )
 
         # TODO Add animation support
-        data += bytearray( struct.pack( "{}H".format( endian ), 0x1) ) # Amount of frames.
+        data += bytearray( struct.pack( "{}H".format( endian ), len(self.buffer_id_frames)) ) # Amount of frames.
 
         if is_mac:
             data += bytearray( struct.pack( "{}B".format( endian ), 0x10) )
@@ -622,7 +639,7 @@ face.setReflective(False)
 face.setFaceTypeIndex(0)
 model.appendPrimitive(face)
 
-model.allocateVertexBuffers(1, 3, 0, 0, 1)
+model.allocateVertexBuffers(1, 3, 0, 0, 1, 0)
 
 model.setChildVertexPosition(0, 0, (512, 0, 0))
 
