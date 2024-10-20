@@ -536,7 +536,7 @@ class COBJModel:
                 for f in range(1, len(self.buffer_id_frames)):
                     vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
 
-                    if vertex_buffer.getValue(index) == self.child_vertex_positions[f]:
+                    if vertex_buffer.getValue(index) != self.child_vertex_positions[f]:
                         found = True
                         continue
 
