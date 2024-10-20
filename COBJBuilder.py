@@ -525,8 +525,17 @@ class COBJModel:
         for i in range(0, vertex_buffer.getValueAmount()):
             reverse_i = vertex_buffer.getValueAmount() - (i + 1)
 
-            if vertex_buffer.getValue(reverse_i) == self.child_vertex_positions[len(self.buffer_id_frames) - 1][index]:
-                return reverse_i
+            if vertex_buffer.getValue(reverse_i) == self.child_vertex_positions[0][index]:
+                is_equal = True
+
+                for f in range(1, len(self.buffer_id_frames)):
+                    frame_vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
+
+                    if frame_vertex_buffer.getValue(reverse_i) != self.child_vertex_positions[f][index]:
+                        is_equal = False
+
+                if is_equal:
+                    return reverse_i
 
         return not_found_value;
 
@@ -538,22 +547,7 @@ class COBJModel:
             print(i, index)
 
             if index != 0xffff:
-                if len(self.buffer_id_frames) == 1:
-                    continue
-
-                found = False
-
-                for f in range(1, len(self.buffer_id_frames)):
-                    vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
-
-                    print("vertex_buffer.getValue({}) = {}".format(index, vertex_buffer.getValue(index)))
-                    print("self.getChildVertexPosition({}, {}) = {}".format(f, i, self.getChildVertexPosition(f, i)))
-
-                    if vertex_buffer.getValue(index) != self.getChildVertexPosition(f, i):
-                        found = True
-
-                if not found:
-                    continue
+                continue
 
             vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[0].getVertexBufferID()]
 
