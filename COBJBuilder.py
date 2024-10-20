@@ -481,10 +481,14 @@ class COBJModel:
         self.primitives.insert(index, primitive)
 
     def allocateVertexBuffers(self, frame_amount : int, vertex_amount : int, normal_amount : int, length_amount : int, child_model_amount : int, bounding_box_amount : int):
-        self.child_vertex_positions = [[(0, 0, 0)] * child_model_amount] * frame_amount
-        self.bounding_box_frame_data = [[COBJBoundingBox] * bounding_box_amount] * frame_amount
+        self.child_vertex_positions = []
+        self.bounding_box_frame_data = []
 
         for i in range(0, frame_amount):
+            self.child_vertex_positions.append([(0, 0, 0)] * child_model_amount)
+
+            self.bounding_box_frame_data.append([COBJBoundingBox] * bounding_box_amount)
+
             #TODO Add safety
 
             vertex_id = i + 1
@@ -671,7 +675,7 @@ model.allocateVertexBuffers(frames_of_animation, 3, 0, 0, 4, 0)
 
 for i in range(0, frames_of_animation):
     model.setChildVertexPosition(i, 0, (256,  64, 0))
-    model.setChildVertexPosition(i, 1, (512, 128, 0))
+    model.setChildVertexPosition(i, 1, (512, int(128 / (i + 1)), 0))
     model.setChildVertexPosition(i, 2, (0, 0, 0))
     model.setChildVertexPosition(i, 3, (int(512 / (i + 1)),   0, 0))
 
@@ -687,4 +691,4 @@ model.setupChildVertices()
 for i in range(0, frames_of_animation):
     print(model.getChildVertexPosition(i, 3))
 
-#model.makeFile("test.cobj", '<', False)
+model.makeFile("test.cobj", '<', False)
