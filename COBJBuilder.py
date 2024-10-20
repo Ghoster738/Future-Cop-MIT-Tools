@@ -435,9 +435,12 @@ class COBJBoundingBox:
                     self.length[0], self.length[1], self.length[2],
                     self.pyth_3, self.pyth_2) )
 
-    def makeChunkSingle(self, endian : str):
-        data  = bytearray( struct.pack( "{}II".format( endian ), 1, 1) )
-        data += self.make(endian)
+    def makeChunk(endian : str, vertex_buffer_ids : {}, buffer_id_frames : [], bounding_box_frame_data : []):
+        data = bytearray( struct.pack( "{}II".format( endian ), 1 + len(bounding_box_frame_data[0]), len(buffer_id_frames) + len(bounding_box_frame_data) * len(bounding_box_frame_data[0])) )
+
+        for f in range(0, len(buffer_id_frames)):
+            data += COBJBoundingBox.makeVertexBB(vertex_buffer_ids[buffer_id_frames[f].getVertexBufferID()]).make(endian)
+
         return COBJChunk("3DBB", endian, data);
 
 class COBJModel:
@@ -505,7 +508,7 @@ class COBJModel:
         return self.length_buffer_ids[self.buffer_id_frames[frame_index].getLengthBufferID()]
 
     def getChildVertexAmount(self):
-        return len(self.child_vertex_positions[0][0])
+        return len(self.child_vertex_positions[0])
 
     def getChildVertexPosition(self, frame_index : int, index : int):
         return self.child_vertex_positions[frame_index][index]
@@ -558,6 +561,15 @@ class COBJModel:
 
                 # This is an iffy way of doing things, but this will have to do for now.
                 vertex_buffer.vector.append( self.getChildVertexPosition(f, i) )
+
+    def getBoundingBoxAmount(self):
+        return len(self.bounding_box_frame_data[0])
+
+    def getBoundingBox(self, frame_index : int, index : int):
+        return self.bounding_box_frame_data[frame_index][index]
+
+    def setBoundingBox(self, frame_index : int, index : int, value: COBJBoundingBox):
+        self.bounding_box_frame_data[frame_index][index] = value
 
     def makeHeader(self, endian : str, is_mac : bool):
         data = bytearray( struct.pack( "{}I".format( endian ), 1) )
@@ -616,9 +628,7 @@ class COBJModel:
             data += self.normal_buffer_ids[i.getNormalBufferID()].makeChunk(i.getNormalBufferID(), "4DNL", endian)
             data += self.length_buffer_ids[i.getLengthBufferID()].makeChunk(i.getLengthBufferID(), endian)
 
-        new_box = COBJBoundingBox.makeVertexBB(self.vertex_buffer_ids[self.buffer_id_frames[0].getVertexBufferID()])
-
-        data += new_box.makeChunkSingle(endian)
+        data += COBJBoundingBox.makeChunk(endian, self.vertex_buffer_ids, self.buffer_id_frames, self.bounding_box_frame_data)
 
         return data
 
