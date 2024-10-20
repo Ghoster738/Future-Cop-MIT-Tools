@@ -532,21 +532,13 @@ class COBJModel:
             if vertex_buffer.getValue(reverse_i) == self.child_vertex_positions[0][index]:
                 is_equal = True
 
-                print("[{}] {} == {}".format(index, self.child_vertex_positions[0][index], vertex_buffer.getValue(reverse_i)))
-
                 for f in range(1, len(self.buffer_id_frames)):
                     frame_vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
-
-                    print("[{}] {} != [{}][{}]{}".format(reverse_i, frame_vertex_buffer.getValue(reverse_i), f, index, self.child_vertex_positions[f][index]))
-
                     if frame_vertex_buffer.getValue(reverse_i) != self.child_vertex_positions[f][index]:
                         is_equal = False
 
                 if is_equal:
-                    print("YES")
                     return reverse_i
-                else:
-                    print("NO")
 
         return not_found_value;
 
@@ -686,9 +678,5 @@ for i in range(0, frames_of_animation):
     positionBuffer.setValue(2, (int(512 / (i + 1)), int(128 / (i + 1)), 0))
 
 model.setupChildVertices()
-
-
-for i in range(0, frames_of_animation):
-    print(model.getChildVertexPosition(i, 3))
 
 model.makeFile("test.cobj", '<', False)
