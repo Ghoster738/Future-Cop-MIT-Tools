@@ -575,7 +575,7 @@ class COBJModel:
     def makeHeader(self, endian : str, is_mac : bool):
         data = bytearray( struct.pack( "{}I".format( endian ), 1) )
 
-        # TODO Add animation support
+        # TODO Add skinned animation support
         data += bytearray( struct.pack( "{}H".format( endian ), len(self.buffer_id_frames)) ) # Amount of frames.
 
         if is_mac:
@@ -630,6 +630,13 @@ class COBJModel:
             data += self.length_buffer_ids[i.getLengthBufferID()].makeChunk(i.getLengthBufferID(), endian)
 
         data += COBJBoundingBox.makeChunk(endian, self.vertex_buffer_ids, self.buffer_id_frames, self.bounding_box_frame_data)
+
+        if len(self.buffer_id_frames) != 1:
+            anm_chunk  = bytearray( struct.pack( "{}I".format( endian ), 1) )
+            anm_chunk += bytearray( struct.pack( "{}BBBBHHBBHI".format( endian ), 0, 1, 0, 0, 0, len(self.buffer_id_frames) - 1, 0, 0, 0, 30) )
+            anm_chunk += bytearray( struct.pack( "{}BBBBHHBBHI".format( endian ), 0, 1, 0, 0, len(self.buffer_id_frames) - 1, 0, 0, 0, 0, 30) )
+
+            data += COBJChunk("AnmD", endian, anm_chunk)
 
         return data
 
