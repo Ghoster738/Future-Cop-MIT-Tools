@@ -667,19 +667,20 @@ frames_of_animation = 8
 model.allocateVertexBuffers(frames_of_animation, 3, 0, 0, 4, 0)
 
 for i in range(0, frames_of_animation):
+    r = frames_of_animation - (i + 1)
     x = int(512 / frames_of_animation)
     y = int(128 / frames_of_animation)
 
     model.setChildVertexPosition(i, 0, (    x,     y, 0))
-    model.setChildVertexPosition(i, 1, (  512, i * y, 0))
+    model.setChildVertexPosition(i, 1, (  512, r * y, 0))
     model.setChildVertexPosition(i, 2, (    0,     0, 0))
-    model.setChildVertexPosition(i, 3, (i * x,     0, 0))
+    model.setChildVertexPosition(i, 3, (r * x,     0, 0))
 
     positionBuffer = model.getPositionBuffer(i)
 
     positionBuffer.setValue(0, (    0,     0, 0))
-    positionBuffer.setValue(1, (i * x,     0, 0))
-    positionBuffer.setValue(2, (i * x, i * y, 0))
+    positionBuffer.setValue(1, (r * x,     0, 0))
+    positionBuffer.setValue(2, (r * x, r * y, 0))
 
 model.setupChildVertices()
 
