@@ -547,8 +547,6 @@ class COBJModel:
             # If vertex buffer does have the child position then skip to the next vertex
             index = self.findChildVertexIndex(i, 0xffff)
 
-            print(i, index)
-
             if index != 0xffff:
                 continue
 
@@ -647,6 +645,9 @@ model = COBJModel()
 testFaceType = COBJFaceType()
 testFaceType.setVertexColor(True, [0xFF, 0, 0x7F])
 model.appendFaceType(testFaceType)
+testFaceType = COBJFaceType()
+testFaceType.setVertexColor(True, [0, 0xFF, 0])
+model.appendFaceType(testFaceType)
 
 face = COBJPrimitive()
 face.setTypeTriangle([0, 1, 2], [0, 0, 0])
@@ -658,7 +659,7 @@ face = COBJPrimitive()
 face.setTypeTriangle([2, 1, 0], [0, 0, 0])
 face.setTexture(False)
 face.setReflective(False)
-face.setFaceTypeIndex(0)
+face.setFaceTypeIndex(1)
 model.appendPrimitive(face)
 
 frames_of_animation = 8
