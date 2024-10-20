@@ -528,14 +528,21 @@ class COBJModel:
             if vertex_buffer.getValue(reverse_i) == self.child_vertex_positions[0][index]:
                 is_equal = True
 
+                print("[{}] {} == {}".format(index, self.child_vertex_positions[0][index], vertex_buffer.getValue(reverse_i)))
+
                 for f in range(1, len(self.buffer_id_frames)):
                     frame_vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
+
+                    print("[{}] {} != [{}][{}]{}".format(reverse_i, frame_vertex_buffer.getValue(reverse_i), f, index, self.child_vertex_positions[f][index]))
 
                     if frame_vertex_buffer.getValue(reverse_i) != self.child_vertex_positions[f][index]:
                         is_equal = False
 
                 if is_equal:
+                    print("YES")
                     return reverse_i
+                else:
+                    print("NO")
 
         return not_found_value;
 
@@ -557,10 +564,10 @@ class COBJModel:
 
             # For every position buffer add a vertice in the back.
             for f in range(0, len(self.buffer_id_frames)):
-                vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
+                frame_vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
 
                 # This is an iffy way of doing things, but this will have to do for now.
-                vertex_buffer.vector.append( self.getChildVertexPosition(f, i) )
+                frame_vertex_buffer.vector.append( self.getChildVertexPosition(f, i) )
 
     def getBoundingBoxAmount(self):
         return len(self.bounding_box_frame_data[0])
@@ -676,4 +683,8 @@ for i in range(0, frames_of_animation):
 
 model.setupChildVertices()
 
-model.makeFile("test.cobj", '<', False)
+
+for i in range(0, frames_of_animation):
+    print(model.getChildVertexPosition(i, 3))
+
+#model.makeFile("test.cobj", '<', False)
