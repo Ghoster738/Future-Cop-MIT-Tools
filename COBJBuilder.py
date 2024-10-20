@@ -504,6 +504,9 @@ class COBJModel:
     def getLengthBuffer(self, frame_index : int):
         return self.length_buffer_ids[self.buffer_id_frames[frame_index].getLengthBufferID()]
 
+    def getChildVertexAmount(self):
+        return len(self.child_vertex_positions[0][0])
+
     def getChildVertexPosition(self, frame_index : int, index : int):
         return self.child_vertex_positions[frame_index][index]
 
@@ -536,7 +539,7 @@ class COBJModel:
                 for f in range(1, len(self.buffer_id_frames)):
                     vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
 
-                    if vertex_buffer.getValue(index) != self.child_vertex_positions[f]:
+                    if vertex_buffer.getValue(index) != self.getChildVertexPosition(f, i):
                         found = True
                         continue
 
