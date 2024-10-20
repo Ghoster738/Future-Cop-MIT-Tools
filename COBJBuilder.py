@@ -523,8 +523,10 @@ class COBJModel:
         vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[0].getVertexBufferID()]
 
         for i in range(0, vertex_buffer.getValueAmount()):
-            if vertex_buffer.getValue(i) == self.child_vertex_positions[0][index]:
-                return i
+            reverse_i = vertex_buffer.getValueAmount() - (i + 1)
+
+            if vertex_buffer.getValue(reverse_i) == self.child_vertex_positions[len(self.buffer_id_frames) - 1][index]:
+                return reverse_i
 
         return not_found_value;
 
@@ -533,20 +535,24 @@ class COBJModel:
             # If vertex buffer does have the child position then skip to the next vertex
             index = self.findChildVertexIndex(i, 0xffff)
 
-            if index != 0xffff:
-                continue
+            print(i, index)
 
-            if len(self.buffer_id_frames) != 1:
+            if index != 0xffff:
+                if len(self.buffer_id_frames) == 1:
+                    continue
+
                 found = False
 
                 for f in range(1, len(self.buffer_id_frames)):
                     vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[f].getVertexBufferID()]
 
+                    print("vertex_buffer.getValue({}) = {}".format(index, vertex_buffer.getValue(index)))
+                    print("self.getChildVertexPosition({}, {}) = {}".format(f, i, self.getChildVertexPosition(f, i)))
+
                     if vertex_buffer.getValue(index) != self.getChildVertexPosition(f, i):
                         found = True
-                        continue
 
-                if found:
+                if not found:
                     continue
 
             vertex_buffer = self.vertex_buffer_ids[self.buffer_id_frames[0].getVertexBufferID()]
@@ -651,16 +657,28 @@ face.setTexture(False)
 face.setReflective(False)
 face.setFaceTypeIndex(0)
 model.appendPrimitive(face)
+face = COBJPrimitive()
+face.setTypeTriangle([2, 1, 0], [0, 0, 0])
+face.setTexture(False)
+face.setReflective(False)
+face.setFaceTypeIndex(0)
+model.appendPrimitive(face)
 
-model.allocateVertexBuffers(1, 3, 0, 0, 1, 0)
+frames_of_animation = 8
 
-model.setChildVertexPosition(0, 0, (512, 0, 0))
+model.allocateVertexBuffers(frames_of_animation, 3, 0, 0, 4, 0)
 
-positionBuffer = model.getPositionBuffer(0)
+for i in range(0, frames_of_animation):
+    model.setChildVertexPosition(i, 0, (256,  64, 0))
+    model.setChildVertexPosition(i, 1, (512, 128, 0))
+    model.setChildVertexPosition(i, 2, (0, 0, 0))
+    model.setChildVertexPosition(i, 3, (int(512 / (i + 1)),   0, 0))
 
-positionBuffer.setValue(0, (  0,   0, 0))
-positionBuffer.setValue(1, (512,   0, 0))
-positionBuffer.setValue(2, (512, 512, 0))
+    positionBuffer = model.getPositionBuffer(i)
+
+    positionBuffer.setValue(0, (  0,   0, 0))
+    positionBuffer.setValue(1, (int(512 / (i + 1)),   0, 0))
+    positionBuffer.setValue(2, (int(512 / (i + 1)), int(128 / (i + 1)), 0))
 
 model.setupChildVertices()
 
