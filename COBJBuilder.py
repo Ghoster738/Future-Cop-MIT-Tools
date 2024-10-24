@@ -596,7 +596,9 @@ class COBJModel:
             bitfield |= 1 << int(abs(m - 5))
         if self.has_environment_map:
             bitfield |= 1 << int(abs(m - 6))
-        #bitfield |= 1 << int(abs(m - 7)) # Animation support. If Skin Animation support is off then morph animation.
+
+        if len(self.buffer_id_frames) > 1:
+            bitfield |= 1 << int(abs(m - 7)) # Animation support. If Skin Animation support is off then morph animation.
 
         data += bytearray( struct.pack( "{}B".format( endian ), bitfield) )
 
@@ -650,7 +652,9 @@ class COBJModel:
 model = COBJModel()
 
 testFaceType = COBJFaceType()
-testFaceType.setVertexColor(True, [0xFF, 0, 0x7F])
+testFaceType.setVertexColor(True, [0x7F, 0x7F, 0x7F])
+testFaceType.setTexCoords(True, [[0, 0], [0, 0xff], [0xff, 0xff], [0xff, 0]])
+testFaceType.setBMPID(1)
 model.appendFaceType(testFaceType)
 testFaceType = COBJFaceType()
 testFaceType.setVertexColor(True, [0, 0xFF, 0])
@@ -658,8 +662,9 @@ model.appendFaceType(testFaceType)
 
 face = COBJPrimitive()
 face.setTypeTriangle([0, 1, 2], [0, 0, 0])
-face.setTexture(False)
+face.setTexture(True)
 face.setReflective(False)
+face.setMaterialBitfield(0b0011)
 face.setFaceTypeIndex(0)
 model.appendPrimitive(face)
 face = COBJPrimitive()
