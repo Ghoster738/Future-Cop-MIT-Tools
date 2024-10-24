@@ -505,7 +505,7 @@ class COBJModel:
     def getPositionBuffer(self, frame_index : int):
         return self.vertex_buffer_ids[self.buffer_id_frames[frame_index].getVertexBufferID()]
 
-    def getNoramlBuffer(self, frame_index : int):
+    def getNormalBuffer(self, frame_index : int):
         return self.normal_buffer_ids[self.buffer_id_frames[frame_index].getNormalBufferID()]
 
     def getLengthBuffer(self, frame_index : int):
@@ -652,47 +652,66 @@ class COBJModel:
 model = COBJModel()
 
 testFaceType = COBJFaceType()
-testFaceType.setVertexColor(True, [0x7F, 0x7F, 0x7F])
+testFaceType.setVertexColor(True, [0, 0xff, 0])
+model.appendFaceType(testFaceType)
+
+testFaceType = COBJFaceType()
+testFaceType.setVertexColor(True, [0x7f, 0x7f, 0x7f])
 testFaceType.setTexCoords(True, [[0, 0], [0, 0xff], [0xff, 0xff], [0xff, 0]])
-testFaceType.setBMPID(1)
+testFaceType.setBMPID(6)
 model.appendFaceType(testFaceType)
 testFaceType = COBJFaceType()
-testFaceType.setVertexColor(True, [0, 0xFF, 0])
+testFaceType.setVertexColor(True, [0x7f, 0, 0])
+testFaceType.setTexCoords(True, [[0, 0], [0, 0xff], [0xff, 0xff], [0xff, 0]])
+testFaceType.setBMPID(6)
+model.appendFaceType(testFaceType)
+testFaceType = COBJFaceType()
+testFaceType.setVertexColor(True, [0, 0x7f, 0])
+testFaceType.setTexCoords(True, [[0, 0], [0, 0xff], [0xff, 0xff], [0xff, 0]])
+testFaceType.setBMPID(6)
+model.appendFaceType(testFaceType)
+testFaceType = COBJFaceType()
+testFaceType.setVertexColor(True, [0, 0, 0x7f])
+testFaceType.setTexCoords(True, [[0, 0], [0, 0xff], [0xff, 0xff], [0xff, 0]])
+testFaceType.setBMPID(6)
 model.appendFaceType(testFaceType)
 
 face = COBJPrimitive()
-face.setTypeTriangle([0, 1, 2], [0, 0, 0])
-face.setTexture(True)
-face.setReflective(False)
-face.setMaterialBitfield(0b0011)
-face.setFaceTypeIndex(0)
-model.appendPrimitive(face)
-face = COBJPrimitive()
-face.setTypeTriangle([2, 1, 0], [0, 0, 0])
+face.setTypeQuad([3, 2, 1, 0], [0, 0, 0, 0])
 face.setTexture(False)
 face.setReflective(False)
-face.setFaceTypeIndex(1)
+face.setFaceTypeIndex(0)
 model.appendPrimitive(face)
 
-frames_of_animation = 8
+number_of_test_face_types = 4
 
-model.allocateVertexBuffers(frames_of_animation, 3, 0, 0, 4, 0)
+number_of_test_quads = 14
 
-for i in range(0, frames_of_animation):
-    r = frames_of_animation - (i + 1)
-    x = int(512 / frames_of_animation)
-    y = int(128 / frames_of_animation)
+for t in range(0, number_of_test_face_types):
+    for i in range(0, number_of_test_quads):
+        face = COBJPrimitive()
+        face.setTypeQuad([0 + 4 * (i + t * number_of_test_quads), 1 + 4 * (i + t * number_of_test_quads), 2 + 4 * (i + t * number_of_test_quads), 3 + 4 * (i + t * number_of_test_quads)], [0, 0, 0, 0])
+        face.setTexture(True)
+        face.setReflective(False)
+        face.setMaterialBitfield(i)
+        face.setFaceTypeIndex(t + 1)
+        model.appendPrimitive(face)
 
-    model.setChildVertexPosition(i, 0, (    x,     y, 0))
-    model.setChildVertexPosition(i, 1, (  512, r * y, 0))
-    model.setChildVertexPosition(i, 2, (    0,     0, 0))
-    model.setChildVertexPosition(i, 3, (r * x,     0, 0))
+number_of_vertices = 4 * number_of_test_quads * number_of_test_face_types # quad vertex count multipled by all known primitive types
 
-    positionBuffer = model.getPositionBuffer(i)
+model.allocateVertexBuffers(1, number_of_vertices, 1, 0, 0, 0)
 
-    positionBuffer.setValue(0, (    0,     0, 0))
-    positionBuffer.setValue(1, (r * x,     0, 0))
-    positionBuffer.setValue(2, (r * x, r * y, 0))
+positionBuffer = model.getPositionBuffer(0)
+
+for t in range(0, number_of_test_face_types):
+    for i in range(0, number_of_test_quads):
+        positionBuffer.setValue(0 + 4 * (i + t * number_of_test_quads), (-64 + 128 * i,   0 + 150 * t, 0))
+        positionBuffer.setValue(1 + 4 * (i + t * number_of_test_quads), ( 64 + 128 * i,   0 + 150 * t, 0))
+        positionBuffer.setValue(2 + 4 * (i + t * number_of_test_quads), ( 64 + 128 * i, 128 + 150 * t, 0))
+        positionBuffer.setValue(3 + 4 * (i + t * number_of_test_quads), (-64 + 128 * i, 128 + 150 * t, 0))
+
+positionBuffer = model.getNormalBuffer(0)
+positionBuffer.setValue(0, (4096,   0, 0))
 
 model.setupChildVertices()
 
