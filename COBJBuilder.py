@@ -679,7 +679,7 @@ model.appendPrimitive(face)
 
 number_of_test_face_types = 4
 
-number_of_test_quads = 14
+number_of_test_quads = 16
 
 for t in range(0, number_of_test_face_types):
     for i in range(0, number_of_test_quads):
