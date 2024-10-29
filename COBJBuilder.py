@@ -458,6 +458,9 @@ class COBJModel:
     def getEnvironmentMapSemiTransparent(self):
         return self.is_semi_transparent
 
+    def setEnvironmentMapSemiTransparent(self, is_semi_transparent : bool):
+        self.is_semi_transparent = is_semi_transparent
+
     def getEnvironmentMapState(self):
         for i in self.primitives:
             if i.getReflective():
