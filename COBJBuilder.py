@@ -450,11 +450,19 @@ class COBJModel:
         self.length_buffer_ids = {}
         self.buffer_id_frames = []
         self.is_semi_transparent = False
-        self.has_environment_map = False
         self.child_vertex_positions = []
         self.face_types = []
         self.primitives = []
         self.bounding_box_frame_data = []
+
+    def getEnvironmentMapSemiTransparent(self):
+        return self.is_semi_transparent
+
+    def getEnvironmentMapState(self):
+        for i in self.primitives:
+            if i.getReflective():
+                return True
+        return False
 
     def getFaceTypeAmount(self):
         return len(self.face_types)
@@ -590,11 +598,13 @@ class COBJModel:
         else:
             m = 0
 
+        has_environment_map = self.getEnvironmentMapState()
+
         #bitfield |= 1 << int(abs(m - 1)) # Skin Animation support
         bitfield |= 1 << int(abs(m - 3)) # Always on?
-        if self.is_semi_transparent:
-            bitfield |= 1 << int(abs(m - 5))
-        if self.has_environment_map:
+        if has_environment_map:
+            if self.is_semi_transparent:
+                bitfield |= 1 << int(abs(m - 5))
             bitfield |= 1 << int(abs(m - 6))
 
         if len(self.buffer_id_frames) > 1:
