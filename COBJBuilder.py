@@ -651,61 +651,111 @@ class COBJModel:
         
 model = COBJModel()
 
-testFaceType = COBJFaceType()
-testFaceType.setVertexColor(True, [0, 0xff, 0])
-testFaceType.setTexCoords(True, [[0, 0], [0, 0xff], [0xff, 0xff], [0xff, 0]])
-testFaceType.setBMPID(6)
-model.appendFaceType(testFaceType)
-
-testFaceType = COBJFaceType()
-testFaceType.setVertexColor(True, [0x7f, 0x7f, 0x7f])
-model.appendFaceType(testFaceType)
-testFaceType = COBJFaceType()
-testFaceType.setVertexColor(True, [0x7f, 0, 0])
-model.appendFaceType(testFaceType)
-testFaceType = COBJFaceType()
-testFaceType.setVertexColor(True, [0, 0x7f, 0])
-model.appendFaceType(testFaceType)
-testFaceType = COBJFaceType()
-testFaceType.setVertexColor(True, [0, 0, 0x7f])
-model.appendFaceType(testFaceType)
+orange = COBJFaceType() # Dark Orange
+orange.setVertexColor(True, [99, 55, 0])
+model.appendFaceType(orange)
+black = COBJFaceType() # Blue
+black.setVertexColor(True, [0, 0, 10])
+model.appendFaceType(black)
 
 face = COBJPrimitive()
-face.setTypeQuad([3, 2, 1, 0], [0, 0, 0, 0])
-face.setTexture(True)
+face.setTypeQuad([2, 3, 1, 0], [0, 0, 0, 0])
+face.setTexture(False)
 face.setReflective(False)
-face.setFaceTypeIndex(0)
+face.setMaterialBitfield(2)
+face.setFaceTypeIndex(0) # Orange index.
+model.appendPrimitive(face)
+face = COBJPrimitive()
+face.setTypeQuad([4, 5, 7, 6], [0, 0, 0, 0])
+face.setTexture(False)
+face.setReflective(False)
+face.setMaterialBitfield(2)
+face.setFaceTypeIndex(0) # Orange index.
+model.appendPrimitive(face)
+face = COBJPrimitive()
+face.setTypeQuad([0, 1, 5, 4], [0, 0, 0, 0])
+face.setTexture(False)
+face.setReflective(False)
+face.setMaterialBitfield(2)
+face.setFaceTypeIndex(0) # Orange index.
+model.appendPrimitive(face)
+face = COBJPrimitive()
+face.setTypeQuad([5, 1, 3, 7], [0, 0, 0, 0])
+face.setTexture(False)
+face.setReflective(False)
+face.setMaterialBitfield(2)
+face.setFaceTypeIndex(0) # Orange index.
+model.appendPrimitive(face)
+face = COBJPrimitive()
+face.setTypeQuad([6, 2, 0, 4], [0, 0, 0, 0])
+face.setTexture(False)
+face.setReflective(False)
+face.setMaterialBitfield(2)
+face.setFaceTypeIndex(0) # Orange index.
 model.appendPrimitive(face)
 
-number_of_test_face_types = 4
+face = COBJPrimitive()
+face.setTypeTriangle([8, 9, 10], [0, 0, 0])
+face.setTexture(False)
+face.setReflective(False)
+face.setMaterialBitfield(2)
+face.setFaceTypeIndex(1) # Black index.
+model.appendPrimitive(face)
 
-number_of_test_quads = 16
+face = COBJPrimitive()
+face.setTypeTriangle([13, 12, 11], [0, 0, 0])
+face.setTexture(False)
+face.setReflective(False)
+face.setMaterialBitfield(2)
+face.setFaceTypeIndex(1) # Black index.
+model.appendPrimitive(face)
 
-for t in range(0, number_of_test_face_types):
-    for i in range(0, number_of_test_quads):
-        face = COBJPrimitive()
-        face.setTypeQuad([0 + 4 * (i + t * number_of_test_quads), 1 + 4 * (i + t * number_of_test_quads), 2 + 4 * (i + t * number_of_test_quads), 3 + 4 * (i + t * number_of_test_quads)], [0, 0, 0, 0])
-        face.setTexture(False)
-        face.setReflective(False)
-        face.setMaterialBitfield(i)
-        face.setFaceTypeIndex(t + 1)
-        model.appendPrimitive(face)
+face = COBJPrimitive()
+face.setTypeTriangle([14, 15, 16], [0, 0, 0])
+face.setTexture(False)
+face.setReflective(False)
+face.setMaterialBitfield(2)
+face.setFaceTypeIndex(1) # Black index.
+model.appendPrimitive(face)
 
-number_of_vertices = 4 * number_of_test_quads * number_of_test_face_types # quad vertex count multipled by all known primitive types
+face = COBJPrimitive()
+face.setTypeTriangle([17, 18, 19], [0, 0, 0])
+face.setTexture(False)
+face.setReflective(False)
+face.setMaterialBitfield(2)
+face.setFaceTypeIndex(1) # Black index.
+model.appendPrimitive(face)
 
-model.allocateVertexBuffers(1, number_of_vertices, 1, 0, 0, 0)
+model.allocateVertexBuffers(1, 20, 0, 0, 0, 0)
 
 positionBuffer = model.getPositionBuffer(0)
 
-for t in range(0, number_of_test_face_types):
-    for i in range(0, number_of_test_quads):
-        positionBuffer.setValue(0 + 4 * (i + t * number_of_test_quads), (-64 + 128 * i,   0 + 150 * t, 0))
-        positionBuffer.setValue(1 + 4 * (i + t * number_of_test_quads), ( 64 + 128 * i,   0 + 150 * t, 0))
-        positionBuffer.setValue(2 + 4 * (i + t * number_of_test_quads), ( 64 + 128 * i, 128 + 150 * t, 0))
-        positionBuffer.setValue(3 + 4 * (i + t * number_of_test_quads), (-64 + 128 * i, 128 + 150 * t, 0))
+span = 256
 
-positionBuffer = model.getNormalBuffer(0)
-positionBuffer.setValue(0, (4096,   0, 0))
+positionBuffer.setValue(0, ( span,  span,  span))
+positionBuffer.setValue(1, ( span,  span, -span))
+positionBuffer.setValue(2, ( span, -span,  span))
+positionBuffer.setValue(3, ( span, -span, -span))
+positionBuffer.setValue(4, (-span,  span,  span))
+positionBuffer.setValue(5, (-span,  span, -span))
+positionBuffer.setValue(6, (-span, -span,  span))
+positionBuffer.setValue(7, (-span, -span, -span))
+
+positionBuffer.setValue( 8, (int( (3 * span) / 4),  int((3 * span) / 4),  span + 16))
+positionBuffer.setValue( 9, (int( (1 * span) / 4),  int((3 * span) / 4),  span + 16))
+positionBuffer.setValue(10, (int( (1 * span) / 4),  int((1 * span) / 4),  span + 16))
+
+positionBuffer.setValue(11, (int(-(3 * span) / 4), int((3 * span) / 4),  span + 16))
+positionBuffer.setValue(12, (int(-(1 * span) / 4), int((3 * span) / 4),  span + 16))
+positionBuffer.setValue(13, (int(-(1 * span) / 4), int((1 * span) / 4),  span + 16))
+
+positionBuffer.setValue(14, (int( (1 * span) / 8), int((1 *  span) / 8), span + 16))
+positionBuffer.setValue(15, (int(-(1 * span) / 8), int((1 *  span) / 8), span + 16))
+positionBuffer.setValue(16, (                   0, int((1 * -span) / 8), span + 16))
+
+positionBuffer.setValue(17, (int( (3 * span) / 4),  int((1 * -span) / 4),  span + 16))
+positionBuffer.setValue(18, (int(-(3 * span) / 4),  int((1 * -span) / 4),  span + 16))
+positionBuffer.setValue(19, (                  0,   int((3 * -span) / 4),  span + 16))
 
 model.setupChildVertices()
 
