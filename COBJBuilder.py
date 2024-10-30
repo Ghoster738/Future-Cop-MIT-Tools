@@ -209,9 +209,27 @@ class Primitive:
         return self.reflective
 
     def setFaceTypeIndex(self, index : int):
+        if self.poly_type == PrimitivePolygonType.STAR:
+            raise Exception("setFaceTypeIndex for STAR is forbidden")
+
         self.face_type_index = index
 
     def getFaceTypeIndex(self):
+        if self.poly_type == PrimitivePolygonType.STAR:
+            raise Exception("getFaceTypeIndex for STAR is forbidden")
+
+        return self.face_type_index
+
+    def setStarVertexAmount(self, vertex_amount : int):
+        if self.poly_type != PrimitivePolygonType.STAR:
+            raise Exception("setStarVertexAmount for anything other than STAR is forbidden. {}".format(self.poly_type))
+
+        self.face_type_index = vertex_amount
+
+    def getStarVertexAmount(self):
+        if self.poly_type == PrimitivePolygonType.STAR:
+            raise Exception("getFaceTypeIndex for STAR is forbidden")
+
         return self.face_type_index
 
     def setMaterialBitfield(self, bitfield):
