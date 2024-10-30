@@ -2,7 +2,7 @@ import struct
 import math
 from enum import Enum
 
-def COBJStrToChunkID(chunk_id : str):
+def strToChunkID(chunk_id : str):
     chunk_ascii = list(chunk_id.encode('ascii'))
 
     if len(chunk_id) != 4:
@@ -10,8 +10,8 @@ def COBJStrToChunkID(chunk_id : str):
 
     return (chunk_ascii[0] << 24) | (chunk_ascii[1] << 16) | (chunk_ascii[2] << 8) | (chunk_ascii[3])
 
-def COBJChunk(chunk_id : str, endian : str, byte_data : bytearray):
-    chunk_number = COBJStrToChunkID(chunk_id)
+def chunk(chunk_id : str, endian : str, byte_data : bytearray):
+    chunk_number = strToChunkID(chunk_id)
 
     data = bytearray( struct.pack( "{}II".format( endian ), chunk_number, len(byte_data) + 8) )
     data += byte_data
@@ -21,7 +21,7 @@ def COBJChunk(chunk_id : str, endian : str, byte_data : bytearray):
 
     return data
 
-class COBJFaceType:
+class FaceType:
     def __init__(self):
         self.opcodes = [0,0,0,0]
         self.texCoords = [[0, 0], [0, 0], [0, 0], [0, 0]]
@@ -91,27 +91,27 @@ class COBJFaceType:
         for i in face_types:
             data += i.make(endian)
 
-        return COBJChunk("3DTL", endian, data)
+        return chunk("3DTL", endian, data)
 
-class COBJPrimitivePolygonType(Enum):
+class PrimitivePolygonType(Enum):
     STAR      = 0
     TRIANGLE  = 3
     QUAD      = 4
     BILLBOARD = 5
     LINE      = 7
 
-class COBJPrimitive:
+class Primitive:
     def __init__(self):
         self.texture = False
         self.bitfield = 0b1101
         self.reflective = False
         self.face_type_index = 0
-        self.poly_type = COBJPrimitivePolygonType.STAR
+        self.poly_type = PrimitivePolygonType.STAR
         self.vertex_index = [0, 0, 0, 0]
         self.normal_index = [0, 0, 0, 0]
 
     def setTypeStar(self, position_index : int, length_index : int, colors : list):
-        self.poly_type = COBJPrimitivePolygonType.STAR
+        self.poly_type = PrimitivePolygonType.STAR
 
         if len(colors) < 3:
             raise Exception("colors is not three but {}".format(len(colors)))
@@ -127,7 +127,7 @@ class COBJPrimitive:
         self.normal_index[3] = 0
 
     def setTypeTriangle(self, position_indexes : list, normal_indexes : list = [0, 0, 0]):
-        self.poly_type = COBJPrimitivePolygonType.TRIANGLE
+        self.poly_type = PrimitivePolygonType.TRIANGLE
 
         if len(position_indexes) < 3:
             raise Exception("position_indexes is not three but {}".format(len(position_indexes)))
@@ -146,7 +146,7 @@ class COBJPrimitive:
         self.normal_index[3] = 0
 
     def setTypeQuad(self, position_indexes : list, normal_indexes : list = [0, 0, 0, 0]):
-        self.poly_type = COBJPrimitivePolygonType.QUAD
+        self.poly_type = PrimitivePolygonType.QUAD
 
         if len(position_indexes) < 4:
             raise Exception("position_indexes is not four but {}".format(len(position_indexes)))
@@ -165,7 +165,7 @@ class COBJPrimitive:
         self.normal_index[3] = normal_indexes[3]
         
     def setTypeBillboard(self, position_index : int, length_index : int):
-        self.poly_type = COBJPrimitivePolygonType.BILLBOARD
+        self.poly_type = PrimitivePolygonType.BILLBOARD
 
         self.vertex_index[0] = position_index
         self.vertex_index[1] = 0xFF
@@ -178,7 +178,7 @@ class COBJPrimitive:
         self.normal_index[3] = 0
 
     def setTypeLine(self, position_index_0 : int, length_index_0 : int, position_index_1 : int, length_index_1 : int):
-        self.poly_type = COBJPrimitivePolygonType.LINE
+        self.poly_type = PrimitivePolygonType.LINE
 
         self.vertex_index[0] = position_index_0
         self.vertex_index[1] = position_index_1
@@ -191,7 +191,7 @@ class COBJPrimitive:
         self.normal_index[3] = 0
 
     def setTexture(self, state : bool):
-        if self.poly_type == COBJPrimitivePolygonType.STAR and state == True:
+        if self.poly_type == PrimitivePolygonType.STAR and state == True:
             raise Exception("Cobj's with stars are untested. Could result in a crash")
 
         self.texture = state
@@ -200,7 +200,7 @@ class COBJPrimitive:
         return self.texture
 
     def setReflective(self, state : bool):
-        if self.poly_type != COBJPrimitivePolygonType.TRIANGLE and self.poly_type != COBJPrimitivePolygonType.QUAD and state == True:
+        if self.poly_type != PrimitivePolygonType.TRIANGLE and self.poly_type != PrimitivePolygonType.QUAD and state == True:
             raise Exception("Cobj's with {} are untested. Could result in a crash".format(self.poly_type))
 
         self.reflective = state
@@ -228,7 +228,7 @@ class COBJPrimitive:
             
         opcode |= self.bitfield << 3
         
-        if self.poly_type == COBJPrimitivePolygonType.TRIANGLE:
+        if self.poly_type == PrimitivePolygonType.TRIANGLE:
             opcode |= 3
         else:
             opcode |= 4
@@ -268,9 +268,9 @@ class COBJPrimitive:
         for i in primitive_types:
             data += i.make(face_offset_table, endian, is_mac)
 
-        return COBJChunk("3DQL", endian, data)
+        return chunk("3DQL", endian, data)
 
-class COBJVector3DArray:
+class Vector3DArray:
     def __init__(self, length: int, value: tuple[int, int, int] = (0, 0, 0)):
         self.vector = [value] * length
 
@@ -289,10 +289,10 @@ class COBJVector3DArray:
         for i in self.vector:
             data += bytearray( struct.pack( "{}hhhh".format( endian ), i[0], i[1], i[2], 0) )
 
-        return COBJChunk(chunk_name, endian, data)
+        return chunk(chunk_name, endian, data)
 
 
-class COBJLengthArray:
+class LengthArray:
     def __init__(self, length: int):
         self.vector = [0] * length
 
@@ -315,9 +315,9 @@ class COBJLengthArray:
         if len(self.vector) % 2 != 0:
             data += bytearray( struct.pack( "{}h".format( endian ), 0) )
 
-        return COBJChunk("3DRL", endian, data)
+        return chunk("3DRL", endian, data)
 
-class COBJBufferIDFrame:
+class BufferIDFrame:
     def __init__(self, vertex_buffer_id: int, normal_buffer_id : int, length_buffer_id : int):
         self.vertex_buffer_id = vertex_buffer_id
         self.normal_buffer_id = normal_buffer_id
@@ -342,36 +342,36 @@ class COBJBufferIDFrame:
         self.length_buffer_id = buffer_id
 
     def makeVertexChunk(buffer_id_frames : list, endian : str):
-        data = bytearray( struct.pack( "{}III".format( endian ), 1, COBJStrToChunkID("4DVL"), len(buffer_id_frames)) )
+        data = bytearray( struct.pack( "{}III".format( endian ), 1, strToChunkID("4DVL"), len(buffer_id_frames)) )
 
         for i in buffer_id_frames:
             data += bytearray( struct.pack( "{}I".format( endian ), i.getVertexBufferID()) )
 
-        return COBJChunk("3DRF", endian, data)
+        return chunk("3DRF", endian, data)
 
     def makeNormalChunk(buffer_id_frames : list, endian : str):
-        data = bytearray( struct.pack( "{}III".format( endian ), 2, COBJStrToChunkID("4DNL"), len(buffer_id_frames)) )
+        data = bytearray( struct.pack( "{}III".format( endian ), 2, strToChunkID("4DNL"), len(buffer_id_frames)) )
 
         for i in buffer_id_frames:
             data += bytearray( struct.pack( "{}I".format( endian ), i.getNormalBufferID()) )
 
-        return COBJChunk("3DRF", endian, data)
+        return chunk("3DRF", endian, data)
 
     def makeLengthChunk(buffer_id_frames : list, endian : str):
-        data = bytearray( struct.pack( "{}III".format( endian ), 3, COBJStrToChunkID("3DRL"), len(buffer_id_frames)) )
+        data = bytearray( struct.pack( "{}III".format( endian ), 3, strToChunkID("3DRL"), len(buffer_id_frames)) )
 
         for i in buffer_id_frames:
             data += bytearray( struct.pack( "{}I".format( endian ), i.getLengthBufferID()) )
 
-        return COBJChunk("3DRF", endian, data)
+        return chunk("3DRF", endian, data)
 
     def makeChunks(buffer_id_frames : list, endian : str):
-        data  = COBJBufferIDFrame.makeVertexChunk(buffer_id_frames, endian)
-        data += COBJBufferIDFrame.makeNormalChunk(buffer_id_frames, endian)
-        data += COBJBufferIDFrame.makeLengthChunk(buffer_id_frames, endian)
+        data  = BufferIDFrame.makeVertexChunk(buffer_id_frames, endian)
+        data += BufferIDFrame.makeNormalChunk(buffer_id_frames, endian)
+        data += BufferIDFrame.makeLengthChunk(buffer_id_frames, endian)
         return data;
 
-class COBJBoundingBox:
+class BoundingBox:
     def __init__(self):
         self.position = (0, 0, 0)
         self.length = (0, 0, 0)
@@ -399,8 +399,8 @@ class COBJBoundingBox:
         self.pyth_3 = int(math.sqrt(x_sq + y_sq + z_sq))
         self.pyth_2 = int(math.sqrt(x_sq + z_sq))
 
-    def makeVertexBB(positionBuffer : COBJVector3DArray):
-        new_box = COBJBoundingBox()
+    def makeVertexBB(positionBuffer : Vector3DArray):
+        new_box = BoundingBox()
 
         min_x =  0x20000
         min_y =  0x20000
@@ -439,11 +439,11 @@ class COBJBoundingBox:
         data = bytearray( struct.pack( "{}II".format( endian ), 1 + len(bounding_box_frame_data[0]), len(buffer_id_frames) + len(bounding_box_frame_data) * len(bounding_box_frame_data[0])) )
 
         for f in range(0, len(buffer_id_frames)):
-            data += COBJBoundingBox.makeVertexBB(vertex_buffer_ids[buffer_id_frames[f].getVertexBufferID()]).make(endian)
+            data += BoundingBox.makeVertexBB(vertex_buffer_ids[buffer_id_frames[f].getVertexBufferID()]).make(endian)
 
-        return COBJChunk("3DBB", endian, data);
+        return chunk("3DBB", endian, data);
 
-class COBJModel:
+class Model:
     def __init__(self):
         self.vertex_buffer_ids = {}
         self.normal_buffer_ids = {}
@@ -473,10 +473,10 @@ class COBJModel:
     def getFaceType(self, index : int):
         return self.face_types[index]
 
-    def appendFaceType(self, face_type : COBJFaceType):
+    def appendFaceType(self, face_type : FaceType):
         self.face_types.append(face_type)
 
-    def insertFaceType(self, index : int, face_type : COBJFaceType):
+    def insertFaceType(self, index : int, face_type : FaceType):
         self.face_types.insert(index, face_type)
 
     def getPrimitiveAmount(self):
@@ -485,10 +485,10 @@ class COBJModel:
     def getPrimitive(self, index : int):
         return self.primitives[index]
 
-    def appendPrimitive(self, primitive : COBJPrimitive):
+    def appendPrimitive(self, primitive : Primitive):
         self.primitives.append(primitive)
 
-    def insertPrimitive(self, index : int, primitive : COBJPrimitive):
+    def insertPrimitive(self, index : int, primitive : Primitive):
         self.primitives.insert(index, primitive)
 
     def allocateVertexBuffers(self, frame_amount : int, vertex_amount : int, normal_amount : int, length_amount : int, child_model_amount : int, bounding_box_amount : int):
@@ -498,20 +498,20 @@ class COBJModel:
         for i in range(0, frame_amount):
             self.child_vertex_positions.append([(0, 0, 0)] * child_model_amount)
 
-            self.bounding_box_frame_data.append([COBJBoundingBox] * bounding_box_amount)
+            self.bounding_box_frame_data.append([BoundingBox] * bounding_box_amount)
 
             #TODO Add safety
 
             vertex_id = i + 1
-            self.vertex_buffer_ids[vertex_id] = COBJVector3DArray(vertex_amount)
+            self.vertex_buffer_ids[vertex_id] = Vector3DArray(vertex_amount)
 
             normal_id = i + 1
-            self.normal_buffer_ids[normal_id] = COBJVector3DArray(normal_amount, (4096, 0, 0))
+            self.normal_buffer_ids[normal_id] = Vector3DArray(normal_amount, (4096, 0, 0))
 
             length_id = i + 1
-            self.length_buffer_ids[length_id] = COBJLengthArray(length_amount)
+            self.length_buffer_ids[length_id] = LengthArray(length_amount)
 
-            self.buffer_id_frames.append( COBJBufferIDFrame(vertex_id, normal_id, length_id) )
+            self.buffer_id_frames.append( BufferIDFrame(vertex_id, normal_id, length_id) )
 
     def getPositionBuffer(self, frame_index : int):
         return self.vertex_buffer_ids[self.buffer_id_frames[frame_index].getVertexBufferID()]
@@ -580,7 +580,7 @@ class COBJModel:
     def getBoundingBox(self, frame_index : int, index : int):
         return self.bounding_box_frame_data[frame_index][index]
 
-    def setBoundingBox(self, frame_index : int, index : int, value: COBJBoundingBox):
+    def setBoundingBox(self, frame_index : int, index : int, value: BoundingBox):
         self.bounding_box_frame_data[frame_index][index] = value
 
     def makeHeader(self, endian : str, is_mac : bool):
@@ -629,29 +629,29 @@ class COBJModel:
 
         data += bytearray( struct.pack( "{}II".format( endian ), 4, 5) )
 
-        return COBJChunk("4DGI", endian, data)
+        return chunk("4DGI", endian, data)
 
     def makeResource(self, endian : str, is_mac : bool):
         data  = self.makeHeader(endian, is_mac)
-        data += COBJFaceType.makeChunk(self.face_types, endian)
+        data += FaceType.makeChunk(self.face_types, endian)
         #TODO 3DTA Add texCoords animation chunk support
-        data += COBJPrimitive.makeChunk(self.primitives, self.face_types, endian, is_mac)
+        data += Primitive.makeChunk(self.primitives, self.face_types, endian, is_mac)
         #TODO 3DAL Add animated star color animation chunk support
-        data += COBJBufferIDFrame.makeChunks(self.buffer_id_frames, endian)
+        data += BufferIDFrame.makeChunks(self.buffer_id_frames, endian)
 
         for i in self.buffer_id_frames:
             data += self.vertex_buffer_ids[i.getVertexBufferID()].makeChunk(i.getVertexBufferID(), "4DVL", endian)
             data += self.normal_buffer_ids[i.getNormalBufferID()].makeChunk(i.getNormalBufferID(), "4DNL", endian)
             data += self.length_buffer_ids[i.getLengthBufferID()].makeChunk(i.getLengthBufferID(), endian)
 
-        data += COBJBoundingBox.makeChunk(endian, self.vertex_buffer_ids, self.buffer_id_frames, self.bounding_box_frame_data)
+        data += BoundingBox.makeChunk(endian, self.vertex_buffer_ids, self.buffer_id_frames, self.bounding_box_frame_data)
 
         if len(self.buffer_id_frames) != 1:
             anm_chunk  = bytearray( struct.pack( "{}I".format( endian ), 1) )
             anm_chunk += bytearray( struct.pack( "{}BBBBHHBBHI".format( endian ), 0, 1, 0, 0, 0, len(self.buffer_id_frames) - 1, 0, 0, 0, 30) )
             anm_chunk += bytearray( struct.pack( "{}BBBBHHBBHI".format( endian ), 0, 1, 0, 0, len(self.buffer_id_frames) - 1, 0, 0, 0, 0, 30) )
 
-            data += COBJChunk("AnmD", endian, anm_chunk)
+            data += chunk("AnmD", endian, anm_chunk)
 
         return data
 
@@ -660,116 +660,3 @@ class COBJModel:
 
         new_file = open( filepath, "wb" )
         new_file.write( data )
-
-        
-model = COBJModel()
-
-orange = COBJFaceType() # Dark Orange
-orange.setVertexColor(True, [99, 55, 0])
-model.appendFaceType(orange)
-black = COBJFaceType() # Blue
-black.setVertexColor(True, [0, 0, 10])
-model.appendFaceType(black)
-
-face = COBJPrimitive()
-face.setTypeQuad([2, 3, 1, 0], [0, 0, 0, 0])
-face.setTexture(False)
-face.setReflective(False)
-face.setMaterialBitfield(2)
-face.setFaceTypeIndex(0) # Orange index.
-model.appendPrimitive(face)
-face = COBJPrimitive()
-face.setTypeQuad([4, 5, 7, 6], [0, 0, 0, 0])
-face.setTexture(False)
-face.setReflective(False)
-face.setMaterialBitfield(2)
-face.setFaceTypeIndex(0) # Orange index.
-model.appendPrimitive(face)
-face = COBJPrimitive()
-face.setTypeQuad([0, 1, 5, 4], [0, 0, 0, 0])
-face.setTexture(False)
-face.setReflective(False)
-face.setMaterialBitfield(2)
-face.setFaceTypeIndex(0) # Orange index.
-model.appendPrimitive(face)
-face = COBJPrimitive()
-face.setTypeQuad([5, 1, 3, 7], [0, 0, 0, 0])
-face.setTexture(False)
-face.setReflective(False)
-face.setMaterialBitfield(2)
-face.setFaceTypeIndex(0) # Orange index.
-model.appendPrimitive(face)
-face = COBJPrimitive()
-face.setTypeQuad([6, 2, 0, 4], [0, 0, 0, 0])
-face.setTexture(False)
-face.setReflective(False)
-face.setMaterialBitfield(2)
-face.setFaceTypeIndex(0) # Orange index.
-model.appendPrimitive(face)
-
-face = COBJPrimitive()
-face.setTypeTriangle([8, 9, 10], [0, 0, 0])
-face.setTexture(False)
-face.setReflective(False)
-face.setMaterialBitfield(2)
-face.setFaceTypeIndex(1) # Black index.
-model.appendPrimitive(face)
-
-face = COBJPrimitive()
-face.setTypeTriangle([13, 12, 11], [0, 0, 0])
-face.setTexture(False)
-face.setReflective(False)
-face.setMaterialBitfield(2)
-face.setFaceTypeIndex(1) # Black index.
-model.appendPrimitive(face)
-
-face = COBJPrimitive()
-face.setTypeTriangle([14, 15, 16], [0, 0, 0])
-face.setTexture(False)
-face.setReflective(False)
-face.setMaterialBitfield(2)
-face.setFaceTypeIndex(1) # Black index.
-model.appendPrimitive(face)
-
-face = COBJPrimitive()
-face.setTypeTriangle([17, 18, 19], [0, 0, 0])
-face.setTexture(False)
-face.setReflective(False)
-face.setMaterialBitfield(2)
-face.setFaceTypeIndex(1) # Black index.
-model.appendPrimitive(face)
-
-model.allocateVertexBuffers(1, 20, 0, 0, 0, 0)
-
-positionBuffer = model.getPositionBuffer(0)
-
-span = 256
-
-positionBuffer.setValue(0, ( span,  span,  span))
-positionBuffer.setValue(1, ( span,  span, -span))
-positionBuffer.setValue(2, ( span, -span,  span))
-positionBuffer.setValue(3, ( span, -span, -span))
-positionBuffer.setValue(4, (-span,  span,  span))
-positionBuffer.setValue(5, (-span,  span, -span))
-positionBuffer.setValue(6, (-span, -span,  span))
-positionBuffer.setValue(7, (-span, -span, -span))
-
-positionBuffer.setValue( 8, (int( (3 * span) / 4),  int((3 * span) / 4),  span + 16))
-positionBuffer.setValue( 9, (int( (1 * span) / 4),  int((3 * span) / 4),  span + 16))
-positionBuffer.setValue(10, (int( (1 * span) / 4),  int((1 * span) / 4),  span + 16))
-
-positionBuffer.setValue(11, (int(-(3 * span) / 4), int((3 * span) / 4),  span + 16))
-positionBuffer.setValue(12, (int(-(1 * span) / 4), int((3 * span) / 4),  span + 16))
-positionBuffer.setValue(13, (int(-(1 * span) / 4), int((1 * span) / 4),  span + 16))
-
-positionBuffer.setValue(14, (int( (1 * span) / 8), int((1 *  span) / 8), span + 16))
-positionBuffer.setValue(15, (int(-(1 * span) / 8), int((1 *  span) / 8), span + 16))
-positionBuffer.setValue(16, (                   0, int((1 * -span) / 8), span + 16))
-
-positionBuffer.setValue(17, (int( (3 * span) / 4),  int((1 * -span) / 4),  span + 16))
-positionBuffer.setValue(18, (int(-(3 * span) / 4),  int((1 * -span) / 4),  span + 16))
-positionBuffer.setValue(19, (                  0,   int((3 * -span) / 4),  span + 16))
-
-model.setupChildVertices()
-
-model.makeFile("test.cobj", '<', False)
