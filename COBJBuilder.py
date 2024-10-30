@@ -443,6 +443,11 @@ class BoundingBox:
 
         return chunk("3DBB", endian, data);
 
+class ModelFormat(Enum):
+    WINDOWS     = 0
+    PLAYSTATION = 0
+    MAC         = 1
+
 class Model:
     def __init__(self):
         self.vertex_buffer_ids = {}
@@ -631,7 +636,14 @@ class Model:
 
         return chunk("4DGI", endian, data)
 
-    def makeResource(self, endian : str, is_mac : bool):
+    def makeResource(self, model_format : ModelFormat):
+        endian = '<'
+        is_mac = False
+
+        if model_format == ModelFormat.MAC:
+            endian = '>'
+            is_mac = True
+
         data  = self.makeHeader(endian, is_mac)
         data += FaceType.makeChunk(self.face_types, endian)
         #TODO 3DTA Add texCoords animation chunk support
@@ -655,8 +667,8 @@ class Model:
 
         return data
 
-    def makeFile(self, filepath : str, endian : str, is_mac : bool):
-        data = self.makeResource(endian, is_mac)
+    def makeFile(self, filepath : str, model_format : ModelFormat):
+        data = self.makeResource(model_format)
 
         new_file = open( filepath, "wb" )
         new_file.write( data )
