@@ -93,6 +93,32 @@ class FaceType:
 
         return chunk("3DTL", endian, data)
 
+class StarAnimation:
+    def __init__(self):
+        self.color = (0, 0, 0)
+        self.speed_factor = 0
+
+    def setColor(self, color: tuple[int, int, int]):
+        self.color = color
+
+    def getColor(self):
+        return self.color
+
+    def setSpeedFactor(self, seconds: float):
+        self.speed_factor = (seconds - 0.1040618)
+
+        if self.speed_factor < 0.0:
+            self.speed_factor = 0
+        else:
+            self.speed_factor = int(self.speed_factor / 0.1515188)
+
+    def getSpeedFactorInSeconds(self):
+        return 0.1515188 * self.speed_factor + 0.1040618
+
+    def getSpeedFactorUnits(self):
+        return self.speed_factor
+
+
 class PrimitivePolygonType(Enum):
     STAR      = 0
     TRIANGLE  = 3
@@ -109,6 +135,10 @@ class Primitive:
         self.poly_type = PrimitivePolygonType.STAR
         self.vertex_index = [0, 0, 0, 0]
         self.normal_index = [0, 0, 0, 0]
+        self.animation_data = None
+
+    def getPolygonType(self):
+        return self.poly_type
 
     def setTypeStar(self, position_index : int, length_index : int, colors : list):
         self.poly_type = PrimitivePolygonType.STAR
@@ -227,10 +257,34 @@ class Primitive:
         self.face_type_index = vertex_amount
 
     def getStarVertexAmount(self):
-        if self.poly_type == PrimitivePolygonType.STAR:
-            raise Exception("getFaceTypeIndex for STAR is forbidden")
+        if self.poly_type != PrimitivePolygonType.STAR:
+            raise Exception("getStarVertexAmount for STAR is forbidden")
 
         return self.face_type_index
+
+    def setStarAnimationData(self, is_there_animation_data : bool):
+        if self.poly_type != PrimitivePolygonType.STAR:
+            raise Exception("setStarAnimationData for anything other than STAR is forbidden. {}".format(self.poly_type))
+
+        if is_there_animation_data:
+            self.animation_data = StarAnimation()
+        else:
+            self.animation_data = None
+
+    def isStarAnimationDataPresent(self):
+        if self.poly_type != PrimitivePolygonType.STAR:
+            raise Exception("isStarAnimationDataPresent for anything other than STAR is forbidden. {}".format(self.poly_type))
+
+        if self.animation_data == None:
+            return False
+        else:
+            return True
+
+    def getStarAnimationData(self):
+        if self.poly_type != PrimitivePolygonType.STAR:
+            raise Exception("isStarAnimationDataPresent for anything other than STAR is forbidden. {}".format(self.poly_type))
+
+        return self.animation_data
 
     def setMaterialBitfield(self, bitfield):
         if self.poly_type == PrimitivePolygonType.STAR:
@@ -304,6 +358,31 @@ class Primitive:
             data += i.make(face_offset_table, endian, is_mac)
 
         return chunk("3DQL", endian, data)
+
+    def makeStarAnimationChunk(primitive_types : list, endian : str, is_mac : bool):
+        count = 0
+
+        for i in primitive_types:
+            if i.getPolygonType() == PrimitivePolygonType.STAR and i.isStarAnimationDataPresent():
+                count += 1
+
+        if count == 0:
+            return bytearray()
+
+        data = bytearray( struct.pack("{}I".format( endian ), count) )
+
+        for index in range(0, len(primitive_types)):
+            i = primitive_types[index]
+
+            if i.getPolygonType() == PrimitivePolygonType.STAR and i.isStarAnimationDataPresent():
+                animation_data = i.getStarAnimationData()
+
+                data += bytearray( struct.pack("{}BB".format( endian ),  index, animation_data.getSpeedFactorUnits()) )
+                data += bytearray( struct.pack("{}BBB".format( endian ), i.vertex_index[0], i.vertex_index[1], i.vertex_index[2]) )
+                data += bytearray( struct.pack("{}BBB".format( endian ), animation_data.getColor()[0], animation_data.getColor()[1], animation_data.getColor()[2]) )
+
+        return chunk("3DAL", endian, data)
+
 
 class Vector3DArray:
     def __init__(self, length: int, value: tuple[int, int, int] = (0, 0, 0)):
@@ -683,7 +762,7 @@ class Model:
         data += FaceType.makeChunk(self.face_types, endian)
         #TODO 3DTA Add texCoords animation chunk support
         data += Primitive.makeChunk(self.primitives, self.face_types, endian, is_mac)
-        #TODO 3DAL Add animated star color animation chunk support
+        data += Primitive.makeStarAnimationChunk(self.primitives, endian, is_mac)
         data += BufferIDFrame.makeChunks(self.buffer_id_frames, endian)
 
         for i in self.buffer_id_frames:
