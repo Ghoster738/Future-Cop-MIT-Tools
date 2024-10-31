@@ -233,9 +233,15 @@ class Primitive:
         return self.face_type_index
 
     def setMaterialBitfield(self, bitfield):
+        if self.poly_type == PrimitivePolygonType.STAR:
+            raise Exception("setMaterialBitfield for STAR is forbidden")
+
         self.bitfield = bitfield
 
     def getMaterialBitfield(self):
+        if self.poly_type == PrimitivePolygonType.STAR:
+            raise Exception("getMaterialBitfield for STAR is forbidden")
+
         return self.bitfield
 
     def make(self, face_offset_table, endian, is_mac):
