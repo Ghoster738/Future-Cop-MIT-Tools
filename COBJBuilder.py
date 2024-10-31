@@ -360,16 +360,7 @@ class Primitive:
         return chunk("3DQL", endian, data)
 
     def makeStarAnimationChunk(primitive_types : list, endian : str, is_mac : bool):
-        count = 0
-
-        for i in primitive_types:
-            if i.getPolygonType() == PrimitivePolygonType.STAR and i.isStarAnimationDataPresent():
-                count += 1
-
-        if count == 0:
-            return bytearray()
-
-        data = bytearray( struct.pack("{}I".format( endian ), count) )
+        data = bytearray(struct.pack("{}I".format( endian ), 1))
 
         for index in range(0, len(primitive_types)):
             i = primitive_types[index]
