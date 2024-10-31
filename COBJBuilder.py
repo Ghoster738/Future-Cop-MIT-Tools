@@ -239,31 +239,42 @@ class Primitive:
         return self.bitfield
 
     def make(self, face_offset_table, endian, is_mac):
-        opcode = 0
+        data = bytearray()
         
-        if self.texture:
-            opcode |= 0x80
-            
-        opcode |= self.bitfield << 3
-        
-        if self.poly_type == PrimitivePolygonType.TRIANGLE:
-            opcode |= 3
+        if self.poly_type == PrimitivePolygonType.STAR:
+            data += bytearray( struct.pack( "{}BB".format( endian ), 0x0B, 0x08) )
         else:
-            opcode |= 4
+            opcode = 0
+
+            if self.texture:
+                opcode |= 0x80
+
+            opcode |= self.bitfield << 3
+
+            if self.poly_type == PrimitivePolygonType.TRIANGLE:
+                opcode |= 3
+            else:
+                opcode |= 4
+
+            data += bytearray( struct.pack( "{}B".format( endian ), opcode) )
+
+            opcode = 0
+
+            if self.reflective:
+                opcode |= 0x80
+
+            opcode |= self.poly_type.value
+
+            if is_mac:
+                opcode = ((opcode & 0xf0) >> 4) | ((opcode & 0x0e) << 3) | ((opcode & 0x01) << 7)
+
+            data += bytearray( struct.pack( "{}B".format( endian ), opcode) )
         
-        data = bytearray( struct.pack( "{}B".format( endian ), opcode) )
-        
-        opcode = 0
-                
-        if self.reflective:
-            opcode |= 0x80
-        
-        opcode |= self.poly_type.value
-            
-        if is_mac:
-            opcode = ((opcode & 0xf0) >> 4) | ((opcode & 0x0e) << 3) | ((opcode & 0x01) << 7)
-        
-        data += bytearray( struct.pack( "{}BH".format( endian ), opcode, face_offset_table[self.face_type_index]) )
+        if self.poly_type != PrimitivePolygonType.STAR:
+            data += bytearray( struct.pack( "{}H".format( endian ), face_offset_table[self.face_type_index]) )
+        else:
+            data += bytearray( struct.pack( "{}H".format( endian ), self.face_type_index) )
+
         data += bytearray( struct.pack( "{}BBBB".format( endian ), self.vertex_index[0], self.vertex_index[1], self.vertex_index[2], self.vertex_index[3]) )
         data += bytearray( struct.pack( "{}BBBB".format( endian ), self.normal_index[0], self.normal_index[1], self.normal_index[2], self.normal_index[3]) )
                 
