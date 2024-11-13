@@ -27,6 +27,7 @@ class FaceType:
         self.texCoordFrames = [((0, 0), (0, 0), (0, 0), (0, 0))]
         self.bmp_id = 0
 
+        self.unk_animation_bitfield = 9 # This is mostly there to preserve data. No setters and getters
         self.frame_duration = 0
 
     def hasVertexColor(self):
@@ -52,7 +53,6 @@ class FaceType:
     def hasTexCoordAnimation(self):
         if self.hasTexCoords() and len(self.texCoordFrames) > 1 and self.frame_duration != 0:
             return True
-
         return False
 
     def setTexCoordFrameCount(self, frame_count: int):
@@ -65,6 +65,18 @@ class FaceType:
             frames[i] = self.texCoordFrames[i]
 
         self.texCoordFrames = frames
+
+    def setTexFrameDurationInUnits(self, frame_duration : int):
+        self.frame_duration = frame_duration
+
+    def setTexFrameDurationInSeconds(self, frame_duration_seconds : float):
+        self.frame_duration = int(frame_duration_seconds / 0.001652018)
+
+    def getTexFrameDurationUnits(self):
+        return self.frame_duration
+
+    def getTexFrameDurationSeconds(self):
+        return self.frame_duration * 0.001652018
 
     def setTexCoords(self, isThereTexture : bool, texCoords : tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]], index: int = 0):
         if isThereTexture:
