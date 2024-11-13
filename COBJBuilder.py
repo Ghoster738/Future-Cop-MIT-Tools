@@ -24,7 +24,7 @@ def chunk(chunk_id : str, endian : str, byte_data : bytearray):
 class FaceType:
     def __init__(self):
         self.opcodes = [0,0,0,0]
-        self.texCoords = [[0, 0], [0, 0], [0, 0], [0, 0]]
+        self.texCoords = ((0, 0), (0, 0), (0, 0), (0, 0))
         self.bmp_id = 0
 
     def hasVertexColor(self):
@@ -53,9 +53,7 @@ class FaceType:
         else:
             self.opcodes[0] &= 0b11111101
 
-        for x in range(0, 4):
-            for y in range(0, 2):
-                self.texCoords[x][y] = texCoords[x][y]
+        self.texCoords = texCoords
 
     def setBMPID(self, bmp_id : int):
         self.bmp_id = bmp_id
