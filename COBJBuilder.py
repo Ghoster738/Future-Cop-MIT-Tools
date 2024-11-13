@@ -118,6 +118,41 @@ class FaceType:
 
         return chunk("3DTL", endian, data)
 
+    def makeOptAnimationChunk(face_types : list, endian : str):
+        count = 0
+
+        for i in face_types:
+            if i.hasTexCoordAnimation():
+                count += 1
+
+        if count == 0:
+            return bytearray()
+
+        data = bytearray( struct.pack( "{}I".format( endian ), count) )
+
+        uv_data_offset = 0
+        offset_to_3DTL = 0
+
+        for i in face_types:
+            if i.hasTexCoordAnimation():
+                data += bytearray( struct.pack( "BBBB", len(self.texCoordFrames), 0, 1, self.unk_animation_bitfield) )
+                data += bytearray( struct.pack( "{}HH".format( endian ), frame_duration, 1) )
+                data += bytearray( struct.pack( "{}II".format( endian ), uv_data_offset, offset_to_3DTL + 4) )
+
+                uv_data_offset += 8 * len(self.texCoordFrames)
+
+            if i.hasTexCoords():
+                offset_to_3DTL += 16
+            else:
+                offset_to_3DTL += 4
+
+        for i in face_types:
+            if i.hasTexCoordAnimation():
+                for f in range(len(self.texCoordFrames)):
+                    data += self.makeTexFrame(endian, f)
+
+        return chunk("3DTA", endian, data)
+
 class StarAnimation:
     def __init__(self):
         self.color = (0, 0, 0)
@@ -785,7 +820,7 @@ class Model:
 
         data  = self.makeHeader(endian, is_mac)
         data += FaceType.makeChunk(self.face_types, endian)
-        #TODO 3DTA Add texCoords animation chunk support
+        data += FaceType.makeOptAnimationChunk(self.face_types, endian)
         data += Primitive.makeChunk(self.primitives, self.face_types, endian, is_mac)
         data += Primitive.makeStarAnimationChunk(self.primitives, endian, is_mac)
         data += BufferIDFrame.makeChunks(self.buffer_id_frames, endian)
