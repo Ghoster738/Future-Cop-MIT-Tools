@@ -92,10 +92,10 @@ class FaceType:
     def getBMPID(self):
         return self.bmp_id
 
-    def makeTexFrame(self, endian, index: int):
+    def makeTexFrame(self, index: int):
         texCoords = self.texCoordFrames[index]
 
-        return bytearray( struct.pack( "{}BBBBBBBB".format( endian ),
+        return bytearray( struct.pack( "BBBBBBBB",
                             texCoords[0][0], texCoords[0][1],
                             texCoords[1][0], texCoords[1][1],
                             texCoords[2][0], texCoords[2][1],
@@ -105,7 +105,7 @@ class FaceType:
         data = bytearray( struct.pack( "{}BBBB".format( endian ), self.opcodes[0], self.opcodes[1], self.opcodes[2], self.opcodes[3]) )
         
         if self.hasTexCoords():
-            data += self.makeTexFrame(endian, 0)
+            data += self.makeTexFrame(0)
             data += bytearray( struct.pack( "{}I".format( endian ), self.bmp_id) )
         
         return data
@@ -149,7 +149,7 @@ class FaceType:
         for i in face_types:
             if i.hasTexCoordAnimation():
                 for f in range(len(self.texCoordFrames)):
-                    data += self.makeTexFrame(endian, f)
+                    data += self.makeTexFrame(f)
 
         return chunk("3DTA", endian, data)
 
