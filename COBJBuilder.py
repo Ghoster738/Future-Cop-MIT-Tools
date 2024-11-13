@@ -112,6 +112,9 @@ class StarAnimation:
         else:
             self.speed_factor = int(self.speed_factor / 0.1515188)
 
+    def setSpeedFactorUnits(self, units: int):
+        self.speed_factor = units
+
     def getSpeedFactorInSeconds(self):
         return 0.1515188 * self.speed_factor + 0.1040618
 
