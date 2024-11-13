@@ -32,14 +32,11 @@ class FaceType:
             return True
         return False
 
-    def setVertexColor(self, isThereColor : bool, colors : list = [0, 0, 0]):
+    def setVertexColor(self, isThereColor : bool, colors : tuple[int, int, int]):
         if isThereColor:
             self.opcodes[0] |= 1
         else:
             self.opcodes[0] &= 0b11111110
-
-        if len(colors) != 3:
-            raise Exception("colors is not three but {}".format(len(colors)))
 
         self.opcodes[1] = colors[0]
         self.opcodes[2] = colors[1]
@@ -50,18 +47,11 @@ class FaceType:
             return True
         return False
 
-    def setTexCoords(self, isThereTexture : bool, texCoords : list = [[0, 0], [0, 0], [0, 0], [0, 0]]):
+    def setTexCoords(self, isThereTexture : bool, texCoords : tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]):
         if isThereTexture:
             self.opcodes[0] |= 2
         else:
             self.opcodes[0] &= 0b11111101
-
-        if len(texCoords) != 4:
-            raise Exception("texCoords is not four but {}".format(len(texCoords)))
-
-        for i in range(0, 4):
-            if len(texCoords[i]) < 2:
-                raise Exception("texCoords[{}] is not two but {}".format(i, len(texCoords[i])))
 
         for x in range(0, 4):
             for y in range(0, 2):
