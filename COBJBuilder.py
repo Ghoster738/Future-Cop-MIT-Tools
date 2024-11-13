@@ -24,8 +24,10 @@ def chunk(chunk_id : str, endian : str, byte_data : bytearray):
 class FaceType:
     def __init__(self):
         self.opcodes = [0,0,0,0]
-        self.texCoords = ((0, 0), (0, 0), (0, 0), (0, 0))
+        self.texCoordFrames = [((0, 0), (0, 0), (0, 0), (0, 0))]
         self.bmp_id = 0
+
+        self.frame_duration = 0
 
     def hasVertexColor(self):
         if (self.opcodes[0] & 1) != 0:
@@ -47,29 +49,41 @@ class FaceType:
             return True
         return False
 
-    def setTexCoords(self, isThereTexture : bool, texCoords : tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]):
+    def hasTexCoordAnimation(self):
+        if self.hasTexCoords() and len(self.texCoordFrames) > 1 and self.frame_duration != 0:
+            return True
+
+        return False
+
+    def setTexCoords(self, isThereTexture : bool, texCoords : tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]], index: int = 0):
         if isThereTexture:
             self.opcodes[0] |= 2
         else:
             self.opcodes[0] &= 0b11111101
 
-        self.texCoords = texCoords
+        self.texCoordFrames[index] = texCoords
 
     def setBMPID(self, bmp_id : int):
         self.bmp_id = bmp_id
 
     def getBMPID(self):
         return self.bmp_id
+
+    def makeTexFrame(self, endian, index: int):
+        texCoords = self.texCoordFrames[index]
+
+        return bytearray( struct.pack( "{}BBBBBBBB".format( endian ),
+                            texCoords[0][0], texCoords[0][1],
+                            texCoords[1][0], texCoords[1][1],
+                            texCoords[2][0], texCoords[2][1],
+                            texCoords[3][0], texCoords[3][1] ))
     
     def make(self, endian):
         data = bytearray( struct.pack( "{}BBBB".format( endian ), self.opcodes[0], self.opcodes[1], self.opcodes[2], self.opcodes[3]) )
         
         if self.hasTexCoords():
-            data += bytearray( struct.pack( "{}BBBBBBBBI".format( endian ),
-                                    self.texCoords[0][0], self.texCoords[0][1],
-                                    self.texCoords[1][0], self.texCoords[1][1],
-                                    self.texCoords[2][0], self.texCoords[2][1],
-                                    self.texCoords[3][0], self.texCoords[3][1], self.bmp_id) )
+            data += self.makeTexFrame(endian, 0)
+            data += bytearray( struct.pack( "{}I".format( endian ), self.bmp_id) )
         
         return data
 
