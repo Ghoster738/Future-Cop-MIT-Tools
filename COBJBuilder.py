@@ -362,6 +362,8 @@ class Primitive:
     def makeStarAnimationChunk(primitive_types : list, endian : str, is_mac : bool):
         data = bytearray(struct.pack("{}I".format( endian ), 1))
 
+        hasData = False
+
         for index in range(0, len(primitive_types)):
             i = primitive_types[index]
 
@@ -372,7 +374,11 @@ class Primitive:
                 data += bytearray( struct.pack("{}BBB".format( endian ), i.vertex_index[0], i.vertex_index[1], i.vertex_index[2]) )
                 data += bytearray( struct.pack("{}BBB".format( endian ), animation_data.getColor()[0], animation_data.getColor()[1], animation_data.getColor()[2]) )
 
-        return chunk("3DAL", endian, data)
+                hasData = True
+
+        if hasData:
+            return chunk("3DAL", endian, data)
+        return bytearray()
 
 
 class Vector3DArray:
