@@ -104,7 +104,7 @@ class StarAnimation:
     def getColor(self):
         return self.color
 
-    def setSpeedFactor(self, seconds: float):
+    def setSpeedFactorInSeconds(self, seconds: float):
         self.speed_factor = (seconds - 0.1040618)
 
         if self.speed_factor < 0.0:
