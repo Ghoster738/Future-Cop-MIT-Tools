@@ -107,10 +107,10 @@ class StarAnimation:
     def setSpeedFactorInSeconds(self, seconds: float):
         self.speed_factor = (seconds - 0.1040618)
 
-        if self.speed_factor < 0.0:
+        if self.speed_factor <= 0.0:
             self.speed_factor = 0
         else:
-            self.speed_factor = int(self.speed_factor / 0.1515188)
+            self.speed_factor = int(min(self.speed_factor / 0.1515188, 255.0))
 
     def setSpeedFactorUnits(self, units: int):
         self.speed_factor = units
