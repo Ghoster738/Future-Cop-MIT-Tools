@@ -55,6 +55,17 @@ class FaceType:
 
         return False
 
+    def setTexCoordFrameCount(self, frame_count: int):
+        if self.frame_count < 1:
+            Exception("Frame Count must be greater than or equal to one!")
+
+        frames = [((0, 0), (0, 0), (0, 0), (0, 0))] * frame_count
+
+        for i in range(min(len(frames), len(self.texCoordFrames))):
+            frames[i] = self.texCoordFrames[i]
+
+        self.texCoordFrames = frames
+
     def setTexCoords(self, isThereTexture : bool, texCoords : tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]], index: int = 0):
         if isThereTexture:
             self.opcodes[0] |= 2
