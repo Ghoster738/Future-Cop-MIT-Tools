@@ -56,7 +56,7 @@ class FaceType:
         return False
 
     def setTexCoordFrameCount(self, frame_count: int):
-        if self.frame_count < 1:
+        if frame_count < 1:
             Exception("Frame Count must be greater than or equal to one!")
 
         frames = [((0, 0), (0, 0), (0, 0), (0, 0))] * frame_count
@@ -135,11 +135,11 @@ class FaceType:
 
         for i in face_types:
             if i.hasTexCoordAnimation():
-                data += bytearray( struct.pack( "BBBB", len(self.texCoordFrames), 0, 1, self.unk_animation_bitfield) )
-                data += bytearray( struct.pack( "{}HH".format( endian ), frame_duration, 1) )
+                data += bytearray( struct.pack( "BBBB", len(i.texCoordFrames), 0, 1, i.unk_animation_bitfield) )
+                data += bytearray( struct.pack( "{}HH".format( endian ), i.frame_duration, 1) )
                 data += bytearray( struct.pack( "{}II".format( endian ), uv_data_offset, offset_to_3DTL + 4) )
 
-                uv_data_offset += 8 * len(self.texCoordFrames)
+                uv_data_offset += 8 * len(i.texCoordFrames)
 
             if i.hasTexCoords():
                 offset_to_3DTL += 16
@@ -148,8 +148,8 @@ class FaceType:
 
         for i in face_types:
             if i.hasTexCoordAnimation():
-                for f in range(len(self.texCoordFrames)):
-                    data += self.makeTexFrame(f)
+                for f in range(len(i.texCoordFrames)):
+                    data += i.makeTexFrame(f)
 
         return chunk("3DTA", endian, data)
 
