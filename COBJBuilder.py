@@ -136,7 +136,7 @@ class FaceType:
         for i in face_types:
             if i.hasTexCoordAnimation():
                 data += bytearray( struct.pack( "BBBB", len(i.texCoordFrames), 0, 1, i.unk_animation_bitfield) )
-                data += bytearray( struct.pack( "{}HH".format( endian ), i.frame_duration, 1) )
+                data += bytearray( struct.pack( "{}HH".format( endian ), i.frame_duration, 0) )
                 data += bytearray( struct.pack( "{}II".format( endian ), uv_data_offset, offset_to_3DTL + 4) )
 
                 uv_data_offset += 8 * len(i.texCoordFrames)
