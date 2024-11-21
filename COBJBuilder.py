@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import struct
 import math
 from enum import Enum
@@ -555,6 +557,9 @@ class BoneAttribute(Enum):
 
 class Bone:
     def __init__(self):
+        self.parent = None
+        self.childern = []
+
         self.attributes = 6 * [0.0]
 
         self.vertex_start  = 0
@@ -564,6 +569,30 @@ class Bone:
         self.normal_amount = 0
 
         self.frame_amount = 1
+
+    def addChild(self, child: Bone):
+        if self.getChildIndex(child) is not None:
+            return False
+
+        child.parent = self
+
+        self.childern.append(child)
+        return True
+
+    def removeChild(self, child: Bone):
+        childIndex = self.getChildIndex(child)
+
+        if childIndex is None:
+            return False
+
+        del self.childern[i]
+        return True
+
+    def getChildIndex(self, child: Bone):
+        for i in range(0, len(self.children)):
+            if child == self.children[i]:
+                return i
+        return None
 
     def setAnimationState(self, attribute: BoneAttribute, hasAnimation: bool):
         if not hasAnimation and isinstance(self.attributes[attribute.value], list):
