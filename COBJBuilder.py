@@ -627,6 +627,12 @@ class Bone:
 
             attr = new_values
 
+        for bone in self.childern:
+            bone.setFrameAmount(frame_amount)
+
+    def getFrameAmount(self):
+        return self.frame_amount
+
     def vertexRange(self, start_index: int, amount: int):
         self.vertex_start  = start_index
         self.vertex_amount = amount
@@ -665,6 +671,19 @@ class Bone:
 
 class Skeleton:
     def __init__(self):
+        self.initial_bones = [Bone]
+
+    def getBone(self):
+        return self.initial_bones[0]
+
+    def getFrameCount(self):
+        return self.initial_bones[0].getFrameAmount()
+
+    def setFrameCount(self, frame_amount: int):
+        for bone in self.initial_bones:
+            bone.setFrameAmount(frame_amount)
+
+    def buildBoundingBoxArray(self):
         pass
 
 class BoundingBox:
