@@ -545,6 +545,99 @@ class BufferIDFrame:
         data += BufferIDFrame.makeLengthChunk(buffer_id_frames, endian)
         return data;
 
+class BoneAttribute(Enum):
+    rotation_z = 0
+    rotation_y = 1
+    rotation_x = 2
+    position_z = 3
+    position_y = 4
+    position_x = 5
+
+class Bone:
+    def __init__(self):
+        self.attributes = 6 * [0.0]
+
+        self.vertex_start  = 0
+        self.vertex_amount = 0
+
+        self.normal_start  = 0
+        self.normal_amount = 0
+
+        self.frame_amount = 1
+
+    def setAnimationState(self, attribute: BoneAttribute, hasAnimation: bool):
+        if not hasAnimation and isinstance(self.attributes[attribute.value], list):
+            single_value = self.attributes[attribute.value][0]
+
+            self.attributes[attribute.value] = single_value
+
+        elif hasAnimation   and isinstance(self.attributes[attribute.value], float):
+            single_value = self.attributes[attribute.value]
+
+            self.attributes[attribute.value] = self.frame_amount * [single_value]
+
+
+    def getAnimationState(self, attribute: BoneAttribute):
+        if isinstance(self.attributes[attribute.value], list):
+            return True
+        else:
+            return False
+
+    def setFrameAmount(self, frame_amount: int):
+        self.frame_amount = frame_amount
+
+        for attr in self.attributes:
+            if isinstance(attr, float):
+                continue
+
+            # Resize case
+            new_values = self.frame_amount * [attr[-1]]
+
+            for i in range(0, min(self.frame_amount, len(attr))):
+                new_values[i] = attr[i]
+
+            attr = new_values
+
+    def vertexRange(self, start_index: int, amount: int):
+        self.vertex_start  = start_index
+        self.vertex_amount = amount
+
+    def getVertexStart(self):
+        return self.vertex_start
+
+    def getVertexAmount(self):
+        return self.vertex_amount
+
+    def normalRange(self, start_index: int, amount: int):
+        self.normal_start  = start_index
+        self.normal_amount = amount
+
+    def getNormalStart(self):
+        return self.normal_start
+
+    def getNormalAmount(self):
+        return self.normal_amount
+
+    def cleanup(self):
+        for attr in self.attributes:
+            if isinstance(attr, float):
+                continue
+
+            same = True
+
+            for i in range(0, len(attr)):
+                if attr[0] != attr[i]:
+                    same = False
+                    break;
+
+            if same:
+                attr = attr[0] # Reduce animation to constant value.
+
+
+class Skeleton:
+    def __init__(self):
+        pass
+
 class BoundingBox:
     def __init__(self):
         self.position = (0, 0, 0)
