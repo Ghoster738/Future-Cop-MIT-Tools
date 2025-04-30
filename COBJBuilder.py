@@ -815,6 +815,9 @@ class Model:
         self.child_vertex_positions = []
         self.bounding_box_frame_data = []
 
+        if frame_amount > 256:
+            print("Warning: The frame amount, " + str(frame_amount) + ", exceeds the vertex animation 256 frames limit of Future Cop. This will most likely crash the game.")
+
         for i in range(0, frame_amount):
             self.child_vertex_positions.append([(0, 0, 0)] * child_model_amount)
 
