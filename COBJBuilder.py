@@ -980,6 +980,9 @@ class Model:
 
             data += chunk("AnmD", endian, anm_chunk)
 
+        if len(data) > 71512:
+            print( "WARNING: This CObj's size is " + str(len(data)) + " while the biggest CObj is " + str(71512)  )
+
         return data
 
     def makeFile(self, filepath : str, model_format : ModelFormat):
